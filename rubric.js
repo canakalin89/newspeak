@@ -90,97 +90,54 @@ const BANDS = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* KONUŞMA GÖREVLERİ (TYMM 9. sınıf temalarıyla uyumlu)               */
+/* KONUŞMA GÖREVLERİ                                                   */
+/* 9. sınıf "Waymark" ders kitabı temalarına (THEME 1–8) göre.        */
+/* Not: Şu an Theme 1–3 tanımlı; kalan üniteler (4–8) eklenecek.      */
 /* ------------------------------------------------------------------ */
 const TASKS = [
   {
-    id: "studying-abroad",
-    title: "Studying Abroad",
-    theme: "Theme: Studying Abroad",
-    prompt: "Talk about a country where you would like to study. Why do you want to go there? What would you study and how would you feel about living away from home?",
+    id: "theme1-school-life",
+    title: "School Life — Countries & Languages",
+    theme: "Theme 1: School Life",
+    prompt: "Introduce yourself: say where you are from, your nationality and the languages you can speak. Then imagine you are a travel vlogger — which country would you like to visit? Talk about its capital, tourist attractions and what you would do there.",
     level: "CEFR A2",
     seconds: 90,
-    keywords: ["country", "study", "abroad", "university", "language", "live", "experience", "culture", "because", "would", "future"],
+    keywords: ["from", "nationality", "language", "speak", "country", "capital", "visit", "tourist", "attraction", "travel", "can", "because"],
     hints: [
-      "I would like to study in ... because ...",
-      "I am interested in ... / I would study ...",
-      "Living abroad would be ... (exciting / difficult) because ...",
-      "It would help me to improve my ..."
+      "Hello! Let me introduce myself. I am ... from ...",
+      "My nationality is ... and I can speak ...",
+      "I would like to visit ... Its capital is ...",
+      "There I would visit ... / There are famous ... because ..."
     ]
   },
   {
-    id: "my-friends",
-    title: "My Friends",
-    theme: "Theme: My Friends",
-    prompt: "Describe your best friend. What is he or she like? What do you usually do together and why do you get along well?",
-    level: "CEFR A2",
-    seconds: 75,
-    keywords: ["friend", "kind", "funny", "helpful", "together", "play", "talk", "because", "share", "trust", "like"],
-    hints: [
-      "My best friend's name is ... and he/she is ...",
-      "We usually ... together.",
-      "I like him/her because ...",
-      "He/She is good at ..."
-    ]
-  },
-  {
-    id: "human-in-nature",
-    title: "Human in Nature",
-    theme: "Theme: Human in Nature",
-    prompt: "How can we protect the environment in daily life? Give examples of what you and your family can do at home and at school.",
+    id: "theme2-classroom-life",
+    title: "Classroom Life — Daily & Study Routines",
+    theme: "Theme 2: Classroom Life",
+    prompt: "Tell us about your daily and study routines on a school day. What do you usually do in the morning, at school and in the evening? Also talk about a classmate or friend you study with and how you help each other.",
     level: "CEFR A2",
     seconds: 90,
-    keywords: ["environment", "nature", "protect", "recycle", "water", "energy", "plant", "trees", "waste", "pollution", "should", "save"],
+    keywords: ["usually", "morning", "school", "evening", "routine", "study", "homework", "friend", "classmate", "every", "after", "before"],
     hints: [
-      "We should ... to protect the environment.",
-      "At home, my family ...",
-      "At school, we can ...",
-      "It is important because ..."
+      "On a school day, I usually get up at ...",
+      "In the morning / at school / in the evening I ...",
+      "I always / usually / sometimes ... before I ...",
+      "My classmate ... and I study together. We help each other by ..."
     ]
   },
   {
-    id: "inspirational-people",
-    title: "Inspirational People",
-    theme: "Theme: Inspirational People",
-    prompt: "Talk about a person who inspires you. Who is he or she? What did this person do, and why do you admire them?",
+    id: "theme3-appearance-personality",
+    title: "Personal Life — Appearance & Personality",
+    theme: "Theme 3: Physical Appearance & Personality",
+    prompt: "Describe a person in your family or a close friend. What do they look like (physical appearance and features)? What is their personality like? Use words that show 'how much' (e.g. very, quite, too).",
     level: "CEFR A2",
     seconds: 90,
-    keywords: ["inspire", "admire", "person", "famous", "because", "achieved", "success", "hard", "work", "example", "respect"],
+    keywords: ["look", "tall", "short", "hair", "eyes", "young", "kind", "friendly", "funny", "cheerful", "personality", "very", "quite"],
     hints: [
-      "The person who inspires me is ...",
-      "He/She is famous for ...",
-      "I admire him/her because ...",
-      "I want to be like him/her because ..."
-    ]
-  },
-  {
-    id: "hobbies-free-time",
-    title: "Hobbies & Free Time",
-    theme: "Theme: Hobbies",
-    prompt: "What do you like doing in your free time? Describe your favourite hobby, how often you do it and why you enjoy it.",
-    level: "CEFR A2",
-    seconds: 75,
-    keywords: ["free", "time", "hobby", "enjoy", "usually", "weekend", "play", "music", "sport", "read", "because", "fun"],
-    hints: [
-      "In my free time, I usually ...",
-      "My favourite hobby is ... I do it ... (every day / at weekends).",
-      "I enjoy it because ...",
-      "I started this hobby when ..."
-    ]
-  },
-  {
-    id: "future-plans",
-    title: "My Future Plans",
-    theme: "Theme: Future Jobs",
-    prompt: "What do you want to be in the future? Describe the job you dream about and explain why it is the right choice for you.",
-    level: "CEFR A2",
-    seconds: 90,
-    keywords: ["future", "job", "want", "be", "because", "study", "dream", "work", "help", "people", "good", "will"],
-    hints: [
-      "In the future, I want to be a ...",
-      "I would like this job because ...",
-      "To do this job, I need to ...",
-      "I think I am good at ..."
+      "I want to describe my ... He/She is ...",
+      "He/She is tall/short with ... hair and ... eyes.",
+      "His/Her personality is ... He/She is very/quite ...",
+      "What a kind / cheerful person! He/She is too ... to ..."
     ]
   }
 ];
