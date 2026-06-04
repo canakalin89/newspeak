@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İngilizce Konuşma Becerisi Değerlendirme · 9. Sınıf</title>
+  <meta name="description" content="Türkiye Yüzyılı Maarif Modeli'ne uygun, 9. sınıf öğrencileri için İngilizce konuşma becerisi değerlendirme uygulaması." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-badge">TYMM</span>
+      <div>
+        <h1>İngilizce Konuşma Becerisi Değerlendirme</h1>
+        <p class="subtitle">Türkiye Yüzyılı Maarif Modeli'ne uygun · 9. Sınıf · Öğretmen Aracı</p>
+      </div>
+    </div>
+    <button id="newAssessmentBtn" class="btn btn-ghost" type="button" hidden>+ Yeni Değerlendirme</button>
+  </header>
+
+  <main class="container">
+
+    <!-- 1. ADIM: Hazırlık -->
+    <section id="setupStep" class="card step">
+      <h2 class="step-title"><span class="step-no">1</span> Öğrenci ve Görev Bilgileri</h2>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Öğrenci Adı Soyadı</span>
+          <input type="text" id="studentName" placeholder="Örn: Ayşe Yılmaz" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Sınıf / Şube</span>
+          <input type="text" id="studentClass" placeholder="Örn: 9-A" autocomplete="off" />
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Konuşma Görevi (Tema)</span>
+        <select id="taskSelect"></select>
+      </label>
+
+      <div id="taskCard" class="task-card">
+        <h3 id="taskTitle"></h3>
+        <p id="taskPrompt"></p>
+        <p class="task-meta">
+          <span id="taskLevel" class="chip"></span>
+          <span id="taskDuration" class="chip chip-soft"></span>
+        </p>
+        <details class="task-hints">
+          <summary>Öğrenciye yardımcı ifadeler / yönlendirmeler</summary>
+          <ul id="taskHints"></ul>
+        </details>
+      </div>
+
+      <p id="speechSupport" class="notice" hidden></p>
+
+      <button id="goToRecordBtn" class="btn btn-primary" type="button">Değerlendirmeye Başla →</button>
+    </section>
+
+    <!-- 2. ADIM: Kayıt -->
+    <section id="recordStep" class="card step" hidden>
+      <h2 class="step-title"><span class="step-no">2</span> Konuşma Kaydı</h2>
+
+      <div class="record-task">
+        <strong id="recordTaskTitle"></strong>
+        <p id="recordTaskPrompt"></p>
+      </div>
+
+      <div class="recorder">
+        <div class="recorder-status">
+          <span id="recDot" class="rec-dot"></span>
+          <span id="recStatusText">Hazır</span>
+          <span id="recTimer" class="rec-timer">00:00</span>
+        </div>
+        <div class="recorder-controls">
+          <button id="startBtn" class="btn btn-primary" type="button">● Kaydı Başlat</button>
+          <button id="stopBtn" class="btn btn-danger" type="button" disabled>■ Durdur</button>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Konuşma Metni (otomatik yazıya dökülür — düzenlenebilir)</span>
+        <textarea id="transcript" rows="7" placeholder="Öğrenci konuştukça metin burada görünecek. Mikrofon yoksa metni elle de yazabilirsiniz."></textarea>
+      </label>
+
+      <div class="row-between">
+        <button id="backToSetupBtn" class="btn btn-ghost" type="button">← Geri</button>
+        <button id="evaluateBtn" class="btn btn-primary" type="button">Değerlendir →</button>
+      </div>
+    </section>
+
+    <!-- 3. ADIM: Sonuç -->
+    <section id="resultStep" class="card step" hidden>
+      <h2 class="step-title"><span class="step-no">3</span> Değerlendirme Sonucu</h2>
+
+      <div class="result-head">
+        <div>
+          <p class="result-student"><strong id="resStudent"></strong> · <span id="resClass"></span></p>
+          <p class="result-task" id="resTask"></p>
+        </div>
+        <div class="score-ring" id="scoreRing">
+          <span id="totalScore">0</span>
+          <small>/ 100</small>
+          <em id="totalBand"></em>
+        </div>
+      </div>
+
+      <div id="criteriaList" class="criteria-list"></div>
+
+      <div class="feedback-box">
+        <h3>Genel Geri Bildirim</h3>
+        <p id="overallFeedback"></p>
+      </div>
+
+      <label class="field">
+        <span>Öğretmen Notu (rapora eklenir)</span>
+        <textarea id="teacherNote" rows="3" placeholder="İsteğe bağlı: öğrenciye yönelik kişisel geri bildirim..."></textarea>
+      </label>
+
+      <div class="row-between">
+        <button id="backToRecordBtn" class="btn btn-ghost" type="button">← Kayda Dön</button>
+        <div class="result-actions">
+          <button id="printBtn" class="btn btn-ghost" type="button">🖨 Yazdır / PDF</button>
+          <button id="exportBtn" class="btn btn-ghost" type="button">⬇ JSON Kaydet</button>
+          <button id="finishBtn" class="btn btn-primary" type="button">Kaydet & Bitir</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kayıtlı Değerlendirmeler -->
+    <section id="historySection" class="card" hidden>
+      <h2 class="step-title">Bu Oturumdaki Değerlendirmeler</h2>
+      <table class="history-table">
+        <thead>
+          <tr><th>Öğrenci</th><th>Sınıf</th><th>Görev</th><th>Puan</th><th>Düzey</th><th>Tarih</th></tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Bu araç, öğretmenin gözlemini destekleyen otomatik bir ön değerlendirme sunar; nihai not öğretmenin takdirindedir. Veriler yalnızca bu tarayıcıda saklanır.</p>
+  </footer>
+
+  <script src="rubric.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
