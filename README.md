@@ -19,8 +19,11 @@
   5. **İçerik & Görev Başarımı** (Content & Task Achievement)
 - ✍️ **Öğretmen denetimi** — Otomatik puanlar bir ön öneridir; öğretmen her ölçütü
   elle düzeltebilir, toplam ve düzey anında güncellenir.
-- 📚 **Hazır konuşma görevleri** — TYMM 9. sınıf temalarıyla uyumlu, CEFR A2 düzeyinde
-  konuşma promptları (Studying Abroad, My Friends, Human in Nature, Inspirational People vb.).
+- 📚 **Hazır konuşma görevleri** — 9. sınıf "Waymark" ders kitabının 8 temasıyla
+  birebir uyumlu, CEFR A2 düzeyinde konuşma promptları:
+  1. School Life · 2. Classroom Life · 3. Physical Appearance & Personality ·
+  4. Family Life · 5. Life in the House & Neighbourhood · 6. Life in the City & Country ·
+  7. Life in the World & Nature · 8. Life in the Universe & Future.
 - 🧾 **Raporlama** — Sonucu yazdırma/PDF, JSON olarak dışa aktarma ve oturum içi geçmiş.
 - 🔒 **Gizlilik** — Tüm veriler yalnızca öğretmenin tarayıcısında (localStorage) tutulur;
   hiçbir veri sunucuya gönderilmez.

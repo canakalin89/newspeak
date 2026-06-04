@@ -171,6 +171,21 @@ const TASKS = [
     ]
   },
   {
+    id: "theme6-city-country",
+    title: "Life in the City & Country — Food & Festivals",
+    theme: "Theme 6: Life in the City & Country",
+    prompt: "Talk about food culture in your city or country. What food do people usually eat, and what are you eating these days? Describe a food festival: what happens there and what makes the food special?",
+    level: "CEFR A2",
+    seconds: 90,
+    keywords: ["food", "eat", "dish", "festival", "city", "country", "delicious", "cook", "traditional", "taste", "usually", "trying"],
+    hints: [
+      "In my city/country, people usually eat ...",
+      "These days, I am trying / eating ...",
+      "There is a food festival called ... People ... there.",
+      "This dish tastes amazing! It is ... and ..."
+    ]
+  },
+  {
     id: "theme7-world-nature",
     title: "Life in the World & Nature — Endangered Animals",
     theme: "Theme 7: Life in the World & Nature",
