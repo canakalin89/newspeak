@@ -139,6 +139,21 @@ const TASKS = [
       "His/Her personality is ... He/She is very/quite ...",
       "What a kind / cheerful person! He/She is too ... to ..."
     ]
+  },
+  {
+    id: "theme4-family-life",
+    title: "Family Life — Jobs & Workplaces",
+    theme: "Theme 4: Family Life",
+    prompt: "Talk about the jobs of two members of your family. What do they do, and where do they work? Describe their work routines and activities. Then imagine your own dream job: what would your work routines and activities be?",
+    level: "CEFR A2",
+    seconds: 90,
+    keywords: ["job", "work", "works", "office", "responsible", "charge", "routine", "activity", "family", "mother", "father", "dream"],
+    hints: [
+      "My mother/father is a ... She/He works in a/an ...",
+      "She/He is responsible for ... / in charge of ...",
+      "At work, she/he usually ...",
+      "My dream job is ... I would ... every day."
+    ]
   }
 ];
 
