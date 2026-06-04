@@ -37,7 +37,18 @@
   /* ============================================================ */
   function initSetup() {
     const sel = $("taskSelect");
-    sel.innerHTML = TASKS.map((t) => `<option value="${t.id}">${t.title} — ${t.theme}</option>`).join("");
+    // Görevleri temalarına göre <optgroup> içinde grupla (her temada 3–5 konu)
+    const order = [];
+    const byTheme = new Map();
+    TASKS.forEach((t) => {
+      if (!byTheme.has(t.theme)) { byTheme.set(t.theme, []); order.push(t.theme); }
+      byTheme.get(t.theme).push(t);
+    });
+    sel.innerHTML = order.map((th) =>
+      `<optgroup label="${escapeHtml(th)}">` +
+      byTheme.get(th).map((t) => `<option value="${t.id}">${escapeHtml(t.title)}</option>`).join("") +
+      `</optgroup>`
+    ).join("");
     sel.addEventListener("change", () => {
       state.task = TASKS.find((t) => t.id === sel.value) || TASKS[0];
       renderTaskCard();
@@ -54,15 +65,8 @@
         "Kayıt sırasında öğrencinin söylediklerini metin alanına elle yazarak yine de değerlendirme yapabilirsiniz.";
     }
 
-    $("goToRecordBtn").addEventListener("click", () => {
-      if (!$("studentName").value.trim()) {
-        $("studentName").focus();
-        $("studentName").classList.add("invalid");
-        return;
-      }
-      goToRecord();
-    });
-    $("studentName").addEventListener("input", (e) => e.target.classList.remove("invalid"));
+    // Ad-soyad ve sınıf isteğe bağlıdır; doğrudan kayıt adımına geçilir.
+    $("goToRecordBtn").addEventListener("click", goToRecord);
   }
 
   function renderTaskCard() {

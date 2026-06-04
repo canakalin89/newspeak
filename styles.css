@@ -71,6 +71,7 @@ body {
 /* Form alanları */
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
 .field > span { font-size: .85rem; font-weight: 600; color: var(--muted); }
+.optional { font-style: normal; font-weight: 400; color: #9aa6b6; font-size: .8em; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 input, select, textarea {
   font: inherit;
