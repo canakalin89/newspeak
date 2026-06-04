@@ -169,6 +169,36 @@ const TASKS = [
       "My favourite room is ... because ...",
       "Right now, my ... is ...-ing in the ..."
     ]
+  },
+  {
+    id: "theme7-world-nature",
+    title: "Life in the World & Nature — Endangered Animals",
+    theme: "Theme 7: Life in the World & Nature",
+    prompt: "Talk about an endangered animal. What was its habitat like in the past and what is it like now? Why is it in danger? Give advice about what people should or must do to protect it.",
+    level: "CEFR A2",
+    seconds: 100,
+    keywords: ["endangered", "animal", "nature", "habitat", "protect", "danger", "extinct", "should", "must", "help", "past", "hunting"],
+    hints: [
+      "One endangered animal is the ... It used to live in ...",
+      "In the past there were ... but now ...",
+      "It is in danger because ...",
+      "People should / must ... to protect it. Every little bit helps!"
+    ]
+  },
+  {
+    id: "theme8-universe-future",
+    title: "Life in the Universe & Future — Films & Technology",
+    theme: "Theme 8: Life in the Universe & Future",
+    prompt: "Talk about your favourite type of film (genre). What usually happens in this kind of film? Then make predictions: how do you think technology and life will change in the future?",
+    level: "CEFR A2",
+    seconds: 100,
+    keywords: ["film", "genre", "comedy", "action", "science", "future", "will", "technology", "robot", "think", "believe", "predict"],
+    hints: [
+      "My favourite film genre is ... It is a breath of fresh air!",
+      "In these films, there is usually ... / the characters ...",
+      "I think / believe that in the future, technology will ...",
+      "In the future, people will ... / there will be ..."
+    ]
   }
 ];
 
