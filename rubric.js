@@ -154,6 +154,21 @@ const TASKS = [
       "At work, she/he usually ...",
       "My dream job is ... I would ... every day."
     ]
+  },
+  {
+    id: "theme5-house-neighbourhood",
+    title: "Life in the House & Neighbourhood",
+    theme: "Theme 5: Life in the House & Neighbourhood",
+    prompt: "Give a short talk about your home. What type of house do you live in? Describe the rooms and the furniture in them. What are people usually doing in the house right now?",
+    level: "CEFR A2",
+    seconds: 90,
+    keywords: ["house", "flat", "live", "room", "kitchen", "living", "bedroom", "furniture", "sofa", "table", "there", "doing"],
+    hints: [
+      "I live in a ... (flat / detached house). Home sweet home!",
+      "There is / There are ... in the living room / kitchen.",
+      "My favourite room is ... because ...",
+      "Right now, my ... is ...-ing in the ..."
+    ]
   }
 ];
 
