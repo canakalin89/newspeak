@@ -28,6 +28,10 @@
     recognizer: null,
     finalText: "",       // tanıma tarafından kesinleşmiş metin
     confidences: [],     // tanıma güven skorları (telaffuz vekili)
+    audio: null,         // AudioAnalyzer örneği (akustik ses analizi)
+    acoustic: null,      // ses dalgasından çıkarılan ölçümler
+    audioBlob: null,     // ses kaydı (öğretmenin dinlemesi için)
+    audioUrl: null,
     scores: null,        // hesaplanan { criterionId: {raw, band, ...} }
     history: loadHistory()
   };
@@ -94,6 +98,9 @@
     state.elapsedMs = 0;
     state.finalText = "";
     state.confidences = [];
+    state.acoustic = null;
+    if (state.audioUrl) { URL.revokeObjectURL(state.audioUrl); state.audioUrl = null; }
+    state.audioBlob = null;
     $("transcript").value = "";
     $("recTimer").textContent = "00:00";
     $("recStatusText").textContent = "Hazır";
@@ -102,7 +109,20 @@
     $("stopBtn").disabled = true;
   }
 
-  function startRecording() {
+  async function startRecording() {
+    // Akustik ses analizini başlat (mikrofon erişimi burada istenir)
+    state.acoustic = null;
+    state.audio = window.AudioAnalyzer ? window.AudioAnalyzer.create() : null;
+    if (state.audio) {
+      try {
+        await state.audio.start();
+      } catch (err) {
+        state.audio = null;
+        $("recStatusText").textContent = "Mikrofona erişilemedi — sesi elle değerlendirin.";
+        return;
+      }
+    }
+
     state.recording = true;
     state.startTime = Date.now();
     $("startBtn").disabled = true;
@@ -119,7 +139,7 @@
     startRecognition();
   }
 
-  function stopRecording() {
+  async function stopRecording() {
     if (!state.recording) return;
     state.recording = false;
     state.elapsedMs = Date.now() - state.startTime;
@@ -128,6 +148,20 @@
     $("startBtn").disabled = false;
     $("stopBtn").disabled = true;
     $("recDot").classList.remove("active");
+    $("recStatusText").textContent = "Ses çözümleniyor…";
+
+    // Akustik analizi sonlandır ve ölçümleri + ses kaydını al
+    if (state.audio) {
+      try {
+        const result = await state.audio.stop();
+        state.acoustic = result.metrics;
+        if (result.audioBlob) {
+          state.audioBlob = result.audioBlob;
+          state.audioUrl = URL.createObjectURL(result.audioBlob);
+        }
+      } catch (_) { /* yoksay */ }
+      state.audio = null;
+    }
     $("recStatusText").textContent = `Tamamlandı · ${formatTime(state.elapsedMs)}`;
   }
 
@@ -207,28 +241,48 @@
     const uniqueWords = new Set(words);
     const ttr = wordCount ? uniqueWords.size / wordCount : 0; // tür-belirteç oranı
 
-    // ----- 1) AKICILIK -----
-    // İdeal A2 hızı ~90–130 wpm. Çok yavaş veya aşırı hız ceza alır.
-    let fluency = clamp(map(wpm, 40, 110, 35, 100), 0, 100);
-    if (wpm > 150) fluency -= 10; // ezber/aceleci okuma izlenimi
+    const ac = state.acoustic;                       // akustik ses ölçümleri (varsa)
     const fillerCount = countFillers(clean);
-    fluency -= Math.min(fillerCount * 4, 25);
-    const repeats = countImmediateRepeats(words);
-    fluency -= Math.min(repeats * 5, 20);
-    if (wordCount < 8) fluency = Math.min(fluency, 35); // çok kısa konuşma
+    // Konuşma hızı: akustik konuşma süresi varsa onu kullan (sessizlikleri dışlar)
+    const speechSec = ac && ac.speechSec ? ac.speechSec : Math.max(state.elapsedMs / 1000, wordCount / 2.2);
+    const wps = speechSec > 0 ? wordCount / speechSec : 0;  // tanınan kelime / konuşma sn
+
+    // ----- 1) AKICILIK ----- (GERÇEK SES ANALİZİNDEN)
+    // Akustik akıcılık: konuşma/sessizlik oranı, uzun duraklamalar, hece hızı.
+    let fluency;
+    if (ac) {
+      fluency = ac.fluencyScore;
+      fluency -= Math.min(fillerCount * 3, 15); // dolgu sesleri küçük ek ceza
+    } else {
+      // Ses analizi yoksa (elle giriş) metinden tahmin
+      fluency = clamp(map(wpm, 40, 110, 35, 100), 0, 100);
+      fluency -= Math.min(fillerCount * 4, 25);
+      fluency -= Math.min(countImmediateRepeats(words) * 5, 20);
+      if (wordCount < 8) fluency = Math.min(fluency, 35);
+    }
     fluency = clamp(fluency, 0, 100);
 
-    // ----- 2) TELAFFUZ -----
-    // Web Speech güven skoru telaffuz netliğinin vekilidir.
+    // ----- 2) TELAFFUZ ----- (SES + ANLAŞILIRLIK)
+    // Telaffuz, sesin anlaşılırlığından ölçülür: çok konuşup az tanınır kelime
+    // çıkması (kötü İngilizce) düşük puan verir. Tonlama ve tanıma güveni katkı yapar.
     let pronunciation;
-    if (state.confidences.length) {
-      const avgConf = avg(state.confidences);
-      pronunciation = clamp(map(avgConf, 0.55, 0.92, 45, 100), 0, 100);
+    const confScore = state.confidences.length
+      ? clamp(map(avg(state.confidences), 0.55, 0.92, 40, 100), 0, 100)
+      : (ac ? 60 : 70);
+    if (ac) {
+      // Anlaşılırlık: ses var ama tanınan kelime az ise düşük (kötü telaffuz işareti)
+      const intelligibility = clamp(map(wps, 0.3, 1.8, 20, 100), 0, 100);
+      pronunciation = confScore * 0.45 + intelligibility * 0.35 + ac.intonationScore * 0.20;
+      // Bol ses, neredeyse hiç tanınır kelime yok => belirgin "anlaşılmaz" sinyali
+      if (ac.speechSec >= 6 && wordCount < 5) pronunciation = Math.min(pronunciation, 30);
+      if (ac.speechSec < 2) pronunciation = Math.min(pronunciation, 45); // çok az konuştu
+    } else if (state.confidences.length) {
+      pronunciation = confScore;
     } else {
-      // Güven verisi yoksa (elle giriş): nötr–olumlu varsayılan, öğretmen düzeltir.
-      pronunciation = 70;
+      pronunciation = 70; // elle giriş; öğretmen düzeltir
     }
-    if (wordCount < 8) pronunciation = Math.min(pronunciation, 50);
+    if (wordCount < 8 && (!ac || wordCount === 0)) pronunciation = Math.min(pronunciation, 50);
+    pronunciation = clamp(pronunciation, 0, 100);
 
     // ----- 3) SÖZ DAĞARCIĞI -----
     // Tür-belirteç oranı + içerik (stopword olmayan benzersiz) sözcük sayısı.
@@ -269,7 +323,12 @@
 
     return {
       raw,
-      metrics: { wordCount, wpm: Math.round(wpm), sentenceCount, ttr: round2(ttr), fillerCount, keywordHits: hits, keywordTotal: kw.length }
+      metrics: {
+        wordCount, wpm: Math.round(wpm), sentenceCount, ttr: round2(ttr), fillerCount,
+        keywordHits: hits, keywordTotal: kw.length,
+        wordsPerSpeechSec: round2(wps),
+        acoustic: ac || null
+      }
     };
   }
 
@@ -318,9 +377,12 @@
   /* ============================================================ */
   function runEvaluation() {
     const text = $("transcript").value.trim();
-    if (text.length < 2) {
+    // Metin yoksa bile akustik ses verisi varsa değerlendirme yapılabilir
+    // (öğrenci konuştu ama anlaşılır kelime çıkmadıysa: bu da bir sonuçtur).
+    if (text.length < 2 && !state.acoustic) {
       $("transcript").focus();
       $("transcript").classList.add("invalid");
+      toast("Değerlendirme için ses kaydı veya metin gerekli.");
       return;
     }
     const { raw, metrics } = analyze(text);
@@ -338,6 +400,8 @@
     $("resStudent").textContent = $("studentName").value.trim() || "—";
     $("resClass").textContent = $("studentClass").value.trim() || "—";
     $("resTask").textContent = `${state.task.title} · ${state.task.theme}`;
+
+    renderAudioPanel();
 
     const list = $("criteriaList");
     list.innerHTML = "";
@@ -374,6 +438,46 @@
     });
 
     updateTotals();
+  }
+
+  // Ses oynatıcı + akustik ölçüm rozetleri
+  function renderAudioPanel() {
+    const panel = $("audioPanel");
+    const ac = state.acoustic;
+    const player = $("audioPlayer");
+    if (state.audioUrl) {
+      player.src = state.audioUrl;
+      player.hidden = false;
+      $("downloadAudioBtn").hidden = false;
+    } else {
+      player.hidden = true;
+      $("downloadAudioBtn").hidden = true;
+    }
+    const chips = $("acousticChips");
+    if (ac) {
+      const items = [
+        ["Konuşma süresi", `${ac.speechSec} sn / ${ac.totalSec} sn`],
+        ["Konuşma oranı", `%${Math.round(ac.speechRatio * 100)}`],
+        ["Duraklama", `${ac.pauseCount} (uzun: ${ac.longPauseCount})`],
+        ["Konuşma hızı", `${ac.articulationRate} hece/sn`],
+        ["Tonlama değişimi", `${ac.pitchVarSemitones} yarım ton`],
+        ["Ses kararlılığı", `%${Math.round(ac.loudnessStability * 100)}`]
+      ];
+      chips.innerHTML = items.map(([k, v]) => `<span class="achip"><b>${v}</b>${k}</span>`).join("");
+    } else {
+      chips.innerHTML = `<span class="achip achip-warn">Akustik ölçüm yok — ses kaydı yapılmadı (metinden değerlendirildi).</span>`;
+    }
+    panel.hidden = !ac && !state.audioUrl;
+  }
+
+  function downloadAudio() {
+    if (!state.audioBlob) return;
+    const ext = (state.audioBlob.type.indexOf("ogg") >= 0) ? "ogg" : (state.audioBlob.type.indexOf("mp4") >= 0 ? "mp4" : "webm");
+    const safe = ($("studentName").value.trim() || "ogrenci").replace(/[^\wçğıöşü -]/gi, "").replace(/\s+/g, "_");
+    const a = document.createElement("a");
+    a.href = state.audioUrl;
+    a.download = `kayit_${safe}_${state.task.id}.${ext}`;
+    a.click();
   }
 
   function refreshScoreVisualsFor(cid, inp) {
@@ -415,7 +519,14 @@
     if (weakest.raw < 70) {
       parts.push(`Geliştirilmesi gereken alan: ${weakest.c.name.toLowerCase()}. ${weakest.c.bands[Math.min(weakest.band + 1, 4)]}`);
     }
-    if (m.wordCount !== undefined) {
+    // Çok ses var ama tanınan kelime yok => kötü İngilizce/anlaşılırlık uyarısı
+    if (m.acoustic && m.acoustic.speechSec >= 5 && m.wordCount < 5) {
+      parts.push("Öğrenci konuştu ancak çok az anlaşılır kelime tanındı; telaffuz/anlaşılırlık üzerinde çalışılmalı. Kaydı dinleyip puanı teyit edin.");
+    }
+    if (m.acoustic) {
+      const a = m.acoustic;
+      parts.push(`(Ses: ${a.speechSec}sn konuşma · %${Math.round(a.speechRatio * 100)} doluluk · ${a.pauseCount} duraklama · ${a.articulationRate} hece/sn · ${m.wordCount} kelime tanındı · konu kapsama ${m.keywordHits}/${m.keywordTotal})`);
+    } else if (m.wordCount !== undefined) {
       parts.push(`(${m.wordCount} sözcük · ~${m.wpm} sözcük/dk · konu kapsama ${m.keywordHits}/${m.keywordTotal})`);
     }
     return parts.join(" ");
@@ -536,10 +647,17 @@
   function bindEvents() {
     $("startBtn").addEventListener("click", startRecording);
     $("stopBtn").addEventListener("click", stopRecording);
-    $("backToSetupBtn").addEventListener("click", () => { stopRecording(); showStep("setup"); });
-    $("evaluateBtn").addEventListener("click", () => { stopRecording(); runEvaluation(); });
+    $("backToSetupBtn").addEventListener("click", async () => { await stopRecording(); showStep("setup"); });
+    $("evaluateBtn").addEventListener("click", async () => {
+      const btn = $("evaluateBtn");
+      btn.disabled = true;
+      await stopRecording();           // ses analizinin bitmesini bekle
+      runEvaluation();
+      btn.disabled = false;
+    });
     $("backToRecordBtn").addEventListener("click", () => showStep("record"));
     $("printBtn").addEventListener("click", () => window.print());
+    $("downloadAudioBtn").addEventListener("click", downloadAudio);
     $("exportBtn").addEventListener("click", exportJson);
     $("finishBtn").addEventListener("click", finishAssessment);
     $("newAssessmentBtn").addEventListener("click", () => { resetForNew(); showStep("setup"); });

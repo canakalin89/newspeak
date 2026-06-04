@@ -107,6 +107,13 @@
         </div>
       </div>
 
+      <div id="audioPanel" class="audio-panel" hidden>
+        <h3>🎧 Ses Kaydı & Akustik Ölçümler</h3>
+        <p class="audio-hint">Öğrencinin sesini dinleyip puanları gerektiğinde elle düzeltebilirsiniz. Aşağıdaki ölçümler doğrudan ses dalgasından çıkarılır (metinden bağımsız).</p>
+        <audio id="audioPlayer" controls></audio>
+        <div id="acousticChips" class="acoustic-chips"></div>
+      </div>
+
       <div id="criteriaList" class="criteria-list"></div>
 
       <div class="feedback-box">
@@ -123,6 +130,7 @@
         <button id="backToRecordBtn" class="btn btn-ghost" type="button">← Kayda Dön</button>
         <div class="result-actions">
           <button id="printBtn" class="btn btn-ghost" type="button">🖨 Yazdır / PDF</button>
+          <button id="downloadAudioBtn" class="btn btn-ghost" type="button" hidden>⬇ Sesi İndir</button>
           <button id="exportBtn" class="btn btn-ghost" type="button">⬇ JSON Kaydet</button>
           <button id="finishBtn" class="btn btn-primary" type="button">Kaydet & Bitir</button>
         </div>
@@ -147,6 +155,7 @@
   </footer>
 
   <script src="rubric.js"></script>
+  <script src="audio.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

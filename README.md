@@ -9,8 +9,15 @@
 
 ## Özellikler
 
-- 🎙️ **Otomatik konuşma tanıma** — Tarayıcının Web Speech API'si ile öğrencinin
-  konuşması canlı olarak metne dökülür. Mikrofon/destek yoksa metin elle girilebilir.
+- 🎙️ **Gerçek ses analizi** — Web Audio API ile öğrencinin **sesi (dalga formu)**
+  doğrudan incelenir: konuşma/sessizlik oranı, duraklama sayısı ve uzunluğu, konuşma
+  hızı (hece/sn), tonlama (pitch) değişimi ve ses kararlılığı ölçülür. Bu ölçümler
+  **metinden bağımsızdır**; öğrenci çok zayıf İngilizce konuşsa, hatta hiç tanınır
+  kelime çıkmasa bile sesin akustik özellikleri değerlendirilir.
+- 🔊 **Ses kaydı + dinleme** — Konuşma kaydedilir; öğretmen sonuç ekranında **dinleyip**
+  puanları teyit/düzelt edebilir, kaydı indirebilir.
+- 🗣️ **Konuşma tanıma (metin)** — Web Speech API ile konuşma ayrıca yazıya dökülür;
+  söz dağarcığı, dilbilgisi ve içerik bu metinden ölçülür. Mikrofon yoksa metin elle girilebilir.
 - 📊 **5 ölçütlü değerlendirme** — Her ölçüt 0–100 ham puan ve 1–4 başarım düzeyi olarak gösterilir:
   1. **Akıcılık** (Fluency)
   2. **Telaffuz** (Pronunciation)
@@ -49,10 +56,23 @@ python3 -m http.server 8000
 
 ## Değerlendirme Mantığı
 
-Puanlama, konuşma metni ve süre üzerinden sezgisel (heuristik) ölçümlerle yapılır:
-konuşma hızı (sözcük/dk), tür-belirteç oranı (söz çeşitliliği), dolgu sözcükleri,
-cümle yapısı işaretleri, görev anahtar sözcüklerinin kapsanması ve konuşma tanıma
-güven skoru (telaffuz vekili). Ayrıntılı ölçüt tanımları için `rubric.js`.
+5 kriter iki kaynağı birleştirir:
+
+- **Sesten (akustik):**
+  - **Akıcılık** → konuşma/sessizlik oranı, uzun duraklamalar, hece hızı (sesin enerji
+    zarfından). Tamamen ses dalgasından, metinden bağımsız.
+  - **Telaffuz** → sesin *anlaşılırlığı*: çok konuşulup az tanınır kelime çıkması (kötü
+    İngilizce) düşük puan verir; ayrıca tonlama (pitch değişimi) ve tanıma güven skoru katkı yapar.
+- **Metinden:** **Söz Dağarcığı** (kelime çeşitliliği), **Dilbilgisi** (cümle yapısı),
+  **İçerik** (görev anahtar sözcüklerinin kapsanması + uzunluk).
+
+Sonuç ekranında ses kaydının yanında akustik ölçümler (konuşma süresi, doluluk oranı,
+duraklama, hece/sn, tonlama, ses kararlılığı) ayrıca gösterilir. Ayrıntılı ölçüt
+tanımları için `rubric.js`, akustik analiz için `audio.js`.
+
+> **Not:** Bu araç telaffuzu *fonem düzeyinde* "doğru/yanlış" diye ölçen profesyonel bir
+> servis değildir; söyleyişin genel kalitesini ve anlaşılırlığını ölçer. Bu yüzden
+> öğretmenin kaydı dinleyip her puanı elle düzeltebilmesi tasarımın merkezindedir.
 
 > ⚠️ Bu araç öğretmenin gözlemini **destekleyen** bir ön değerlendirme sunar.
 > Nihai not her zaman öğretmenin takdirindedir.
@@ -64,4 +84,5 @@ güven skoru (telaffuz vekili). Ayrıntılı ölçüt tanımları için `rubric.
 | `index.html` | Arayüz ve adımlar |
 | `styles.css` | Görünüm |
 | `rubric.js` | 5 ölçüt, başarım düzeyleri ve konuşma görevleri |
+| `audio.js` | Gerçek ses (akustik) analizi: duraklama, hız, tonlama, ses kaydı |
 | `app.js` | Konuşma tanıma, puanlama motoru, raporlama |

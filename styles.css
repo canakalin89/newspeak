@@ -172,6 +172,16 @@ textarea { resize: vertical; }
 .band-3 { background: var(--b3); } .band-3.band-pill { background: var(--b3); }
 .band-4 { background: var(--b4); } .band-4.band-pill { background: var(--b4); }
 
+/* Ses kaydı & akustik panel */
+.audio-panel { background: #eef4fb; border: 1px solid #cfe0f3; border-radius: 12px; padding: 14px 16px; margin: 0 0 18px; }
+.audio-panel h3 { margin: 0 0 4px; font-size: .95rem; color: #1c5390; }
+.audio-hint { margin: 0 0 10px; font-size: .8rem; color: var(--muted); }
+.audio-panel audio { width: 100%; margin-bottom: 12px; }
+.acoustic-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.achip { display: flex; flex-direction: column; background: #fff; border: 1px solid #d6e3f2; border-radius: 9px; padding: 6px 10px; font-size: .72rem; color: var(--muted); min-width: 88px; }
+.achip b { font-size: .95rem; color: var(--ink); font-weight: 700; }
+.achip-warn { color: #8a5b12; background: #fff8e6; border-color: #f3dca0; }
+
 .feedback-box { background: #f0f7f2; border: 1px solid #cfe6d6; border-radius: 12px; padding: 14px 16px; margin: 18px 0; }
 .feedback-box h3 { margin: 0 0 6px; font-size: .95rem; color: var(--brand); }
 .feedback-box p { margin: 0; font-size: .9rem; }
@@ -201,7 +211,8 @@ textarea { resize: vertical; }
 /* Yazdırma / PDF */
 @media print {
   .app-header, .app-footer, #historySection, .recorder-controls,
-  #backToRecordBtn, .result-actions, #newAssessmentBtn { display: none !important; }
+  #backToRecordBtn, .result-actions, #newAssessmentBtn,
+  .audio-panel audio, .audio-hint { display: none !important; }
   body { background: #fff; }
   .card { box-shadow: none; border: 1px solid #ccc; }
   .raw-input { border: none; -webkit-appearance: none; appearance: none; }
