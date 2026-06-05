@@ -309,9 +309,19 @@ textarea { resize: vertical; }
 .achip b { font-size: .98rem; color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
 .achip-warn { color: #785c1c; background: #fbf6ea; border-color: #ecd9a8; }
 
-.feedback-box { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; margin: 20px 0; }
-.feedback-box h3 { margin: 0 0 7px; font-size: 1rem; color: var(--accent-ink); }
-.feedback-box p { margin: 0; font-size: .89rem; color: #3c3a34; }
+.feedback-box { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+.feedback-box h3 { margin: 0 0 8px; font-size: 1.05rem; color: var(--accent-ink); }
+.fb-summary { margin: 0 0 14px; font-size: .9rem; color: #3c3a34; }
+.fb-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.fb-col { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.fb-col h4 { margin: 0 0 8px; font-size: .82rem; font-family: var(--sans); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.fb-strong h4 { color: var(--b3); }
+.fb-improve h4 { color: var(--b2); }
+.fb-col ul { margin: 0; padding-left: 18px; }
+.fb-col li { font-size: .85rem; color: #3c3a34; margin-bottom: 6px; }
+.fb-col li:last-child { margin-bottom: 0; }
+.fb-muted { color: var(--muted); list-style: none; margin-left: -18px; }
+@media (max-width: 560px) { .fb-cols { grid-template-columns: 1fr; } }
 
 /* Geçmiş tablosu */
 .history-table { width: 100%; border-collapse: collapse; font-size: .87rem; }
@@ -417,6 +427,12 @@ textarea { resize: vertical; }
   .pr-summary { background: #f4f6f2; border-left: 3px solid #1f5132; padding: 7px 10px;
     border-radius: 0 6px 6px 0; margin-bottom: 8px; font-size: 9.8px; }
   .pr-acoustic { margin-top: 4px; color: #5b6779; font-size: 9px; }
+  .pr-feedback { display: flex; gap: 12px; margin-bottom: 8px; }
+  .pr-fb { flex: 1; font-size: 9.8px; border: 1px solid #e6e1d7; border-radius: 6px; padding: 7px 10px; }
+  .pr-fb.strong { border-left: 3px solid #2f8f4e; flex: 0 0 34%; }
+  .pr-fb.improve { border-left: 3px solid #c77d16; }
+  .pr-fb ul { margin: 4px 0 0; padding-left: 16px; }
+  .pr-fb li { margin-bottom: 2px; }
   .pr-note { border: 1px dashed #cfd6e0; border-radius: 6px; padding: 7px 10px; font-size: 9.8px; margin-bottom: 10px; }
 
   .pr-foot { display: flex; justify-content: space-between; align-items: flex-end;

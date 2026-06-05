@@ -32,6 +32,9 @@
   3. **Sunum** (Delivery) — akıcılık, telaffuz, anlaşılırlık (gerçek ses analizinden)
   4. **Dil** (Language Use) — dilbilgisi + söz dağarcığı
   5. **Yaratıcılık** (Creativity) — özgünlük, ifade zenginliği
+- 💬 **Öne çıkan geri bildirim** — Sonuç sayfası ve PDF raporda **güçlü yönler** ve
+  **geliştirilecek alanlar + somut öneriler** ayrı ayrı, düzeye göre öğrenciye yönelik
+  tavsiyelerle gösterilir.
 - 🗂️ **Raporlar arşivi** — Tüm değerlendirmeler kalıcı olarak saklanır; "Raporlar" sekmesinden
   öğrenci/sınıf araması yapıp **istediğin zaman tekrar PDF** alabilirsin.
 - 🏫 **Sınıf yönetimi** — Sınıf oluştur, öğrenci ekle/sil; **toplu öğrenci ekleme**

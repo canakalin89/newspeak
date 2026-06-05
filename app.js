@@ -880,6 +880,19 @@
       ? `Konuşma süresi ${ac.speechSec} sn · doluluk %${Math.round(ac.speechRatio * 100)} · ${ac.pauseCount} duraklama · ${ac.articulationRate} hece/sn · tonlama ${ac.pitchVarSemitones} yarım ton`
       : "";
 
+    // Geri bildirim: güçlü yönler + öneriler (kayıttaki kriterlerden)
+    const fbEntries = (rec.criteria || []).map((sc) => {
+      const c = CRITERIA.find((x) => x.id === sc.id) || { name: sc.name, bands: {}, advice: {} };
+      return { c: c, raw: sc.raw, band: sc.band };
+    });
+    const fb = feedbackBuckets(fbEntries);
+    const strongLine = fb.strengths.length
+      ? fb.strengths.map((e) => escapeHtml(e.c.name)).join(", ")
+      : "—";
+    const improveItems = fb.improvements.length
+      ? fb.improvements.map((e) => `<li><b>${escapeHtml(e.c.name)}:</b> ${escapeHtml((e.c.advice && e.c.advice[e.band]) || "")}</li>`).join("")
+      : `<li>Tüm ölçütlerde iyi düzeyde; bu seviyeyi korumak için düzenli pratik önerilir.</li>`;
+
     $("printReport").innerHTML = `
       <div class="pr-sheet">
         <div class="pr-head">
@@ -908,6 +921,11 @@
         <div class="pr-summary">
           <strong>Genel değerlendirme.</strong> ${escapeHtml(rec.feedback || band.hint)}
           ${acLine ? `<div class="pr-acoustic">Ses ölçümleri: ${acLine}</div>` : ""}
+        </div>
+
+        <div class="pr-feedback">
+          <div class="pr-fb strong"><strong>Güçlü yönler:</strong> ${strongLine}</div>
+          <div class="pr-fb improve"><strong>Öğrenciye öneriler:</strong><ul>${improveItems}</ul></div>
         </div>
 
         ${note ? `<div class="pr-note"><strong>Öğretmen notu.</strong> ${escapeHtml(note)}</div>` : ""}
@@ -961,8 +979,29 @@
     $("totalBand").textContent = band.label;
     $("scoreRing").style.setProperty("--p", total);
     $("overallFeedback").textContent = buildFeedback(total, band);
+    renderFeedbackLists();
     state.total = total;
     state.totalBandLabel = band.label;
+  }
+
+  // Kriterleri güçlü yönler (düzey ≥3) ve geliştirilecek alanlar (düzey ≤2) olarak ayır
+  function feedbackBuckets(entries) {
+    return {
+      strengths: entries.filter((e) => e.band >= 3).sort((a, b) => b.raw - a.raw),
+      improvements: entries.filter((e) => e.band <= 2).sort((a, b) => a.raw - b.raw)
+    };
+  }
+
+  function renderFeedbackLists() {
+    const entries = CRITERIA.map((c) => ({ c: c, raw: state.scores[c.id].raw, band: state.scores[c.id].band }));
+    const { strengths, improvements } = feedbackBuckets(entries);
+    const noSpeech = state.metrics && state.metrics.noSpeech;
+    $("fbStrengths").innerHTML = (!noSpeech && strengths.length)
+      ? strengths.map((e) => `<li><strong>${escapeHtml(e.c.name)}.</strong> ${escapeHtml(e.c.bands[e.band])}</li>`).join("")
+      : `<li class="fb-muted">Öne çıkan güçlü bir alan yok; aşağıdaki önerilere odaklan.</li>`;
+    $("fbImprovements").innerHTML = improvements.length
+      ? improvements.map((e) => `<li><strong>${escapeHtml(e.c.name)}.</strong> ${escapeHtml(e.c.advice[e.band])}</li>`).join("")
+      : `<li class="fb-muted">Tüm ölçütlerde iyi bir düzeydesin. Bu seviyeyi korumak için düzenli pratik yap.</li>`;
   }
 
   function buildFeedback(total, band) {
