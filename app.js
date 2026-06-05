@@ -413,6 +413,29 @@
     }
   }
 
+  // Worker'ı ve durumunu sıfırla (tekrar denemede taze başlangıç için)
+  function resetWhisperWorker() {
+    if (_whisperWorker) { try { _whisperWorker.terminate(); } catch (_) {} _whisperWorker = null; }
+    _whisperJob = null;
+    _whisperPipe = null;
+    _whisperLoading = null;
+    for (const k in _wFiles) delete _wFiles[k];
+  }
+
+  // Otomatik (1 kez) + kullanıcı onaylı tekrar deneme; "Devam et" seçilirse null döner
+  async function transcribeWithRetryUI(blob) {
+    for (;;) {
+      try {
+        setLoading(whisperWasDownloaded() ? "Ses çözümleniyor (Whisper)…" : "Whisper modeli hazırlanıyor…");
+        return await retry(() => transcribeWithWhisper(blob), 1, 1500);
+      } catch (e) {
+        const choice = await showLoadingError("Çözümleme başarısız oldu (internet veya model hatası). Tekrar deneyebilirsin.");
+        if (choice === "retry") { resetWhisperWorker(); continue; }
+        return null; // tarayıcı metniyle devam
+      }
+    }
+  }
+
   // Ses kaydını (webm/opus) 16 kHz mono Float32'ye çöz — Whisper bunu bekler
   async function blobToMono16k(blob) {
     const buf = await blob.arrayBuffer();
@@ -1323,12 +1346,16 @@
     const o = $("loadingOverlay");
     if (!o) return;
     o.hidden = false;
+    $("loadingError").hidden = true;
+    $("loadingMain").hidden = false;
     $("loadingText").textContent = text || "Lütfen bekleyin…";
     $("loadingBarWrap").hidden = true;
     $("loadingBar").style.width = "0%";
   }
   function setLoading(text, pct) {
     if (!_loadingActive) return;
+    $("loadingError").hidden = true;
+    $("loadingMain").hidden = false;
     if (text != null) $("loadingText").textContent = text;
     if (pct != null) { $("loadingBarWrap").hidden = false; $("loadingBar").style.width = clamp(pct, 0, 100) + "%"; }
   }
@@ -1336,6 +1363,37 @@
     _loadingActive = false;
     const o = $("loadingOverlay");
     if (o) o.hidden = true;
+  }
+  // Hata durumunu göster; kullanıcı "Tekrar Dene" ya da "Devam et" seçer
+  function showLoadingError(msg) {
+    _loadingActive = true;
+    const o = $("loadingOverlay");
+    if (o) o.hidden = false;
+    $("loadingMain").hidden = true;
+    $("loadingError").hidden = false;
+    $("loadingErrorText").textContent = msg || "Bir hata oluştu.";
+    return new Promise((resolve) => {
+      const onRetry = () => { cleanup(); resolve("retry"); };
+      const onCont = () => { cleanup(); resolve("continue"); };
+      function cleanup() {
+        $("loadingRetryBtn").removeEventListener("click", onRetry);
+        $("loadingContinueBtn").removeEventListener("click", onCont);
+        $("loadingError").hidden = true;
+        $("loadingMain").hidden = false;
+      }
+      $("loadingRetryBtn").addEventListener("click", onRetry);
+      $("loadingContinueBtn").addEventListener("click", onCont);
+    });
+  }
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+  // Bir işlevi hata durumunda otomatik olarak yeniden dener (artan beklemeyle)
+  async function retry(fn, times, delay) {
+    let last;
+    for (let i = 0; i <= times; i++) {
+      try { return await fn(); }
+      catch (e) { last = e; if (i < times) await sleep(delay * (i + 1)); }
+    }
+    throw last;
   }
 
   /* matematiksel/biçim yardımcıları */
@@ -1371,15 +1429,10 @@
       showLoading("Ses çözümleniyor…");
       try {
         await stopRecording();         // ses analizinin bitmesini bekle
-        // İsteğe bağlı: Whisper ile daha doğru yazıya dökme (worker'da; arayüz kilitlenmez)
+        // İsteğe bağlı: Whisper ile daha doğru yazıya dökme (worker'da; hata olursa tekrar denenir)
         if (state.useWhisper && state.audioBlob) {
-          setLoading(whisperWasDownloaded() ? "Ses çözümleniyor (Whisper)…" : "Whisper modeli hazırlanıyor…");
-          try {
-            const txt = await transcribeWithWhisper(state.audioBlob);
-            if (txt) { $("transcript").value = txt; $("transcript").classList.remove("invalid"); }
-          } catch (e) {
-            toast("Whisper çözümlemesi yapılamadı; tarayıcı metni kullanılıyor.");
-          }
+          const txt = await transcribeWithRetryUI(state.audioBlob);
+          if (txt) { $("transcript").value = txt; $("transcript").classList.remove("invalid"); }
           $("recStatusText").textContent = `Tamamlandı · ${formatTime(state.elapsedMs)}`;
         }
         setLoading("Puanlanıyor…");
