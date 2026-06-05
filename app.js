@@ -87,6 +87,8 @@
   /* KAYIT ADIMI                                                  */
   /* ============================================================ */
   function goToRecord() {
+    state.useWhisper = !!($("useWhisper") && $("useWhisper").checked);
+    if (state.useWhisper) preloadWhisper(); // modeli arka planda erkenden indirmeye başla
     showStep("record");
     $("recordTaskTitle").textContent = state.task.title;
     $("recordTaskPrompt").textContent = state.task.prompt;
@@ -215,6 +217,89 @@
       try { state.recognizer.onend = null; state.recognizer.stop(); } catch (_) {}
       state.recognizer = null;
     }
+  }
+
+  /* ============================================================ */
+  /* WHISPER — ücretsiz, tarayıcıda daha doğru yazıya dökme       */
+  /* (OpenAI Whisper, transformers.js / ONNX-WASM ile)            */
+  /* ============================================================ */
+  const WHISPER_MODEL = "Xenova/whisper-base.en"; // İngilizce, dengeli boyut/doğruluk
+  let _whisperPipe = null, _whisperLoading = null;
+
+  function preloadWhisper() { getWhisper().catch(() => {}); }
+
+  // transformers.js'i birden çok CDN'den dene (biri engelliyse diğeri)
+  async function importTransformers() {
+    const cdns = [
+      "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+      "https://esm.sh/@xenova/transformers@2.17.2",
+      "https://unpkg.com/@xenova/transformers@2.17.2"
+    ];
+    let lastErr;
+    for (const url of cdns) {
+      try { return await import(/* @vite-ignore */ url); }
+      catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error("transformers.js yüklenemedi");
+  }
+
+  function getWhisper() {
+    if (_whisperPipe) return Promise.resolve(_whisperPipe);
+    if (!_whisperLoading) {
+      _whisperLoading = (async () => {
+        const mod = await importTransformers();
+        mod.env.allowLocalModels = false;            // modeli Hugging Face CDN'inden al
+        const pipe = await mod.pipeline("automatic-speech-recognition", WHISPER_MODEL, {
+          quantized: true,
+          progress_callback: (p) => {
+            if (p && p.status === "progress" && p.progress != null) {
+              $("recStatusText").textContent = `Whisper modeli indiriliyor… %${Math.round(p.progress)}`;
+            }
+          }
+        });
+        _whisperPipe = pipe;
+        return pipe;
+      })();
+    }
+    return _whisperLoading;
+  }
+
+  async function transcribeWithWhisper(blob) {
+    $("recStatusText").textContent = "Whisper modeli hazırlanıyor…";
+    const pipe = await getWhisper();
+    $("recStatusText").textContent = "Ses çözümleniyor (Whisper)…";
+    const pcm = await blobToMono16k(blob);
+    const out = await pipe(pcm, { chunk_length_s: 30, stride_length_s: 5 });
+    return (out && out.text ? out.text : "").replace(/\s+/g, " ").trim();
+  }
+
+  // Ses kaydını (webm/opus) 16 kHz mono Float32'ye çöz — Whisper bunu bekler
+  async function blobToMono16k(blob) {
+    const buf = await blob.arrayBuffer();
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AC();
+    const decoded = await ctx.decodeAudioData(buf);
+    try { ctx.close(); } catch (_) {}
+    const ch = decoded.numberOfChannels, len = decoded.length;
+    let data = decoded.getChannelData(0);
+    if (ch > 1) {
+      const mix = new Float32Array(len);
+      for (let c = 0; c < ch; c++) {
+        const d = decoded.getChannelData(c);
+        for (let i = 0; i < len; i++) mix[i] += d[i] / ch;
+      }
+      data = mix;
+    }
+    if (decoded.sampleRate === 16000) return data;
+    const ratio = 16000 / decoded.sampleRate;
+    const outLen = Math.round(len * ratio);
+    const out = new Float32Array(outLen);
+    for (let i = 0; i < outLen; i++) {
+      const t = i / ratio, i0 = Math.floor(t), i1 = Math.min(i0 + 1, len - 1);
+      const f = t - i0;
+      out[i] = data[i0] * (1 - f) + data[i1] * f;
+    }
+    return out;
   }
 
   /* ============================================================ */
@@ -829,6 +914,16 @@
       const btn = $("evaluateBtn");
       btn.disabled = true;
       await stopRecording();           // ses analizinin bitmesini bekle
+      // İsteğe bağlı: Whisper ile daha doğru yazıya dökme (ücretsiz, tarayıcıda)
+      if (state.useWhisper && state.audioBlob) {
+        try {
+          const txt = await transcribeWithWhisper(state.audioBlob);
+          if (txt) { $("transcript").value = txt; $("transcript").classList.remove("invalid"); }
+        } catch (e) {
+          toast("Whisper çözümlemesi yapılamadı; tarayıcı metni kullanılıyor.");
+        }
+        $("recStatusText").textContent = `Tamamlandı · ${formatTime(state.elapsedMs)}`;
+      }
       runEvaluation();
       btn.disabled = false;
     });

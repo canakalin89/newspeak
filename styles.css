@@ -162,6 +162,15 @@ textarea { resize: vertical; }
   padding: 13px 15px; border-radius: 8px; font-size: .86rem;
 }
 
+.check-field {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--accent-soft); border: 1px solid var(--line);
+  border-radius: 8px; padding: 13px 15px; margin-bottom: 18px;
+  font-size: .86rem; color: #3c3a34; cursor: pointer;
+}
+.check-field input { width: auto; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--accent); }
+.check-field strong { color: var(--accent-ink); }
+
 /* ---------- Kayıt ---------- */
 .record-task { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 18px; }
 .record-task strong { font-family: var(--serif); }
