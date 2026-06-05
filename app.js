@@ -252,6 +252,17 @@
   /* ============================================================ */
   const WHISPER_MODEL = "Xenova/whisper-base.en"; // İngilizce, dengeli boyut/doğruluk
   const WHISPER_READY_FLAG = "tymm_whisper_ready"; // model daha önce indirildi mi
+  const WHISPER_RTF_KEY = "tymm_whisper_rtf";      // ölçülen gerçek-zaman oranı (cihaz hızı)
+
+  // RTF = çözümleme süresi / ses süresi. Cihaz hızına göre kalibre edilir.
+  function getRtf() { const v = parseFloat(localStorage.getItem(WHISPER_RTF_KEY)); return (v && v > 0) ? v : 2.0; }
+  function saveRtfSample(rtf) {
+    rtf = clamp(rtf, 0.2, 12);
+    const prev = parseFloat(localStorage.getItem(WHISPER_RTF_KEY));
+    const next = (prev && prev > 0) ? prev * 0.7 + rtf * 0.3 : rtf; // üstel hareketli ortalama
+    try { localStorage.setItem(WHISPER_RTF_KEY, String(Math.round(next * 100) / 100)); } catch (_) {}
+  }
+  function estSecFor(audioSec) { return clamp(audioSec * getRtf() + 1.5, 4, 240); }
   let _whisperPipe = null, _whisperLoading = null;
   let _whisperWorker = null, _whisperJob = null;
   let _whisperModelReady = false; // model belleğe yüklendi mi (tahmini ilerleme için)
@@ -428,15 +439,16 @@
   // Çözümleme için tahmini ilerleme: ses süresine göre asimptotik dolan çubuk + kalan süre.
   // (Whisper inference gerçek yüzde yayınlamaz; bu yüzden tahmin gösterilir.)
   function startTranscribeProgress(estSec) {
+    const tau = Math.max(estSec / 2.3, 1); // tahmini sürede ~%90'a ulaşır
     let readyAt = _whisperModelReady ? performance.now() : null;
     const tick = () => {
       if (!_loadingActive) return;
       if (!_whisperModelReady) { readyAt = null; return; } // model hazırlık fazı (indirme % gösterilir)
       if (readyAt == null) readyAt = performance.now();
       const elapsed = (performance.now() - readyAt) / 1000;
-      const pct = Math.min(96, (1 - Math.exp(-elapsed / estSec)) * 100); // erken "bitti" demez
+      const pct = Math.min(97, (1 - Math.exp(-elapsed / tau)) * 100); // erken "bitti" demez
       const remaining = Math.round(estSec - elapsed);
-      const txt = remaining > 1 ? `Ses çözümleniyor… (~${remaining} sn)` : "Ses çözümleniyor… (neredeyse bitti)";
+      const txt = remaining > 1 ? `Ses çözümleniyor… (~${remaining} sn kaldı)` : "Ses çözümleniyor… (neredeyse bitti)";
       setLoading(txt, pct);
     };
     const id = setInterval(tick, 200);
@@ -446,15 +458,18 @@
 
   // Otomatik (1 kez) + kullanıcı onaylı tekrar deneme; "Devam et" seçilirse null döner
   async function transcribeWithRetryUI(blob) {
-    // Çözümleme süresi tahmini: konuşma süresine bağlı (cihaz hızına göre yaklaşık)
+    // Çözümleme süresi tahmini: ses süresi × ölçülen cihaz hızı (RTF, her seferinde kalibre)
     const audioSec = (state.acoustic && state.acoustic.speechSec) || (state.elapsedMs / 1000) || 20;
-    const estSec = clamp(audioSec * 1.3 + 4, 6, 180);
+    const estSec = estSecFor(audioSec);
     for (;;) {
-      setLoading(_whisperModelReady ? "Ses çözümleniyor…" : "Whisper modeli hazırlanıyor…");
+      const wasReady = _whisperModelReady; // model zaten hazırsa süre ~saf çözümleme süresidir
+      const t0 = performance.now();
+      setLoading(_whisperModelReady ? `Ses çözümleniyor… (~${Math.round(estSec)} sn)` : "Whisper modeli hazırlanıyor…");
       const stopProgress = startTranscribeProgress(estSec);
       try {
         const txt = await retry(() => transcribeWithWhisper(blob), 1, 1500);
         stopProgress();
+        if (wasReady) saveRtfSample(((performance.now() - t0) / 1000) / Math.max(audioSec, 1)); // ortalamayı güncelle
         setLoading("Tamamlandı", 100);
         return txt;
       } catch (e) {
