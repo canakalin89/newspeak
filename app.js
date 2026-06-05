@@ -470,6 +470,77 @@
     panel.hidden = !ac && !state.audioUrl;
   }
 
+  // Tek sayfalık yazdırma/PDF raporunu oluştur (güncel puan ve notları yansıtır)
+  function buildPrintReport() {
+    const total = state.total != null ? state.total : 0;
+    const band = totalBand(total);
+    const name = $("studentName").value.trim() || "—";
+    const cls = $("studentClass").value.trim() || "—";
+    const note = $("teacherNote").value.trim();
+    const date = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });
+
+    const rows = CRITERIA.map((c) => {
+      const s = state.scores[c.id];
+      return `
+        <tr>
+          <td class="prc-name">${c.name}<small>${c.en}</small></td>
+          <td class="prc-score"><span class="prc-band b${s.band}">${s.raw}</span></td>
+          <td class="prc-level">Düzey ${s.band}/4</td>
+          <td class="prc-advice"><span class="prc-state">${escapeHtml(c.bands[s.band])}</span> ${escapeHtml(c.advice[s.band])}</td>
+        </tr>`;
+    }).join("");
+
+    const ac = state.metrics && state.metrics.acoustic;
+    const acLine = ac
+      ? `Konuşma süresi ${ac.speechSec} sn · doluluk %${Math.round(ac.speechRatio * 100)} · ${ac.pauseCount} duraklama · ${ac.articulationRate} hece/sn · tonlama ${ac.pitchVarSemitones} yarım ton`
+      : "";
+
+    $("printReport").innerHTML = `
+      <div class="pr-sheet">
+        <div class="pr-head">
+          <div class="pr-id">
+            <h1>İngilizce Konuşma Becerisi Değerlendirme Raporu</h1>
+            <p>9. Sınıf · CEFR A2 · İngilizce</p>
+          </div>
+          <div class="pr-total b${totalToBand(total)}">
+            <span class="pr-total-num">${total}</span><span class="pr-total-den">/100</span>
+            <em>${band.label}</em>
+          </div>
+        </div>
+
+        <div class="pr-meta">
+          <div><span>Öğrenci</span><strong>${escapeHtml(name)}</strong></div>
+          <div><span>Sınıf</span><strong>${escapeHtml(cls)}</strong></div>
+          <div><span>Tarih</span><strong>${date}</strong></div>
+          <div class="pr-meta-task"><span>Konuşma Görevi</span><strong>${escapeHtml(state.task.title)} — ${escapeHtml(state.task.theme)}</strong></div>
+        </div>
+
+        <table class="pr-table">
+          <thead><tr><th>Ölçüt</th><th>Puan</th><th>Düzey</th><th>Durum ve yapman gerekenler</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <div class="pr-summary">
+          <strong>Genel değerlendirme.</strong> ${escapeHtml($("overallFeedback").textContent || band.hint)}
+          ${acLine ? `<div class="pr-acoustic">Ses ölçümleri: ${acLine}</div>` : ""}
+        </div>
+
+        ${note ? `<div class="pr-note"><strong>Öğretmen notu.</strong> ${escapeHtml(note)}</div>` : ""}
+
+        <div class="pr-foot">
+          <div class="pr-sign"><span></span>Öğretmen imzası</div>
+          <p>Bu rapor, öğretmenin gözlemini destekleyen otomatik bir ön değerlendirmedir; nihai değerlendirme öğretmene aittir.</p>
+        </div>
+      </div>`;
+  }
+
+  function totalToBand(score) {
+    if (score >= 85) return 4;
+    if (score >= 70) return 3;
+    if (score >= 50) return 2;
+    return 1;
+  }
+
   function downloadAudio() {
     if (!state.audioBlob) return;
     const ext = (state.audioBlob.type.indexOf("ogg") >= 0) ? "ogg" : (state.audioBlob.type.indexOf("mp4") >= 0 ? "mp4" : "webm");
@@ -656,7 +727,7 @@
       btn.disabled = false;
     });
     $("backToRecordBtn").addEventListener("click", () => showStep("record"));
-    $("printBtn").addEventListener("click", () => window.print());
+    $("printBtn").addEventListener("click", () => { buildPrintReport(); window.print(); });
     $("downloadAudioBtn").addEventListener("click", downloadAudio);
     $("exportBtn").addEventListener("click", exportJson);
     $("finishBtn").addEventListener("click", finishAssessment);

@@ -26,6 +26,12 @@ const CRITERIA = [
       3: "Genel olarak akıcıdır; ara sıra duraklasa da konuşmayı sürdürür.",
       2: "Sık duraklar ve kendini tekrar eder; konuşma parça parçadır.",
       1: "Çok yavaş ve kopuk; sözcük sözcük ilerler, ileti tamamlanamaz."
+    },
+    advice: {
+      1: "Kısa kalıplarla başla: \"I like… because…\", \"I think…\". Cevabını söylemeden önce içinden kur, sonra duraklamadan söyle.",
+      2: "Konuşmadan önce 3–4 cümle planla. Düşünürken susmak yerine \"well…\", \"let me see…\" gibi köprü ifadeler kullan.",
+      3: "Cümleleri and / but / because / so ile birbirine bağla. Cevabını evde sesli kaydedip dinle.",
+      4: "Akıcılığın iyi. Doğal vurgu ve duraklamalarla bu seviyeyi koru; daha uzun konuşmalar dene."
     }
   },
   {
@@ -39,6 +45,12 @@ const CRITERIA = [
       3: "Genellikle anlaşılır; küçük telaffuz hataları iletiyi engellemez.",
       2: "Telaffuz hataları zaman zaman anlaşılmayı güçleştirir.",
       1: "Telaffuz büyük ölçüde anlaşılmaz; dinleyici çoğu sözcüğü çözemez."
+    },
+    advice: {
+      1: "Kelimeleri sözlükten dinle (audio) ve yüksek sesle tekrar et. Önce tek tek, net söylemeye çalış.",
+      2: "Zorlandığın sesleri ayrı çalış (th, w, v, r). Kısa metinleri sesli oku ve kendini kaydedip dinle.",
+      3: "Cümle vurgusuna ve tonlamaya odaklan. Film/şarkı eşliğinde \"shadowing\" (arkasından tekrar) yap.",
+      4: "Telaffuzun net. Bağlı konuşmada (linking) ritmi geliştirerek daha doğal bir tını yakalayabilirsin."
     }
   },
   {
@@ -52,6 +64,12 @@ const CRITERIA = [
       3: "Yeterli sözcük dağarcığıyla iletiyi kurar; ara sıra tekrar eder.",
       2: "Sınırlı ve tekrarlı sözcükler kullanır; ifadeler kısıtlıdır.",
       1: "Çok az sözcükle, dağınık ve konu dışı ifadeler kurar."
+    },
+    advice: {
+      1: "Konuyla ilgili 10 temel kelimeyi listele ve her birini bir cümlede kullan.",
+      2: "Aynı kelimeyi tekrar etmek yerine eş anlamlılarını öğren (good → nice, great, wonderful).",
+      3: "Konuya özel kalıplar ve birkaç deyim ekle. Öğrendiğin yeni kelimeyi kendi cümlende kullan.",
+      4: "Söz dağarcığın zengin. Daha az yaygın, konuya özgü kelimelerle ifadeni çeşitlendirebilirsin."
     }
   },
   {
@@ -65,6 +83,12 @@ const CRITERIA = [
       3: "Temel yapıları doğru kurar; bazı hatalar olsa da ileti anlaşılır.",
       2: "Sık dilbilgisi hataları yapar; cümle yapısı zayıftır.",
       1: "Cümle kuramaz; yapı hataları iletiyi anlaşılmaz kılar."
+    },
+    advice: {
+      1: "Basit cümle düzenine odaklan: Özne + fiil + nesne. \"I am / He is\" kullanımını pekiştir.",
+      2: "Geniş zaman (Simple Present) ile şimdiki zamanı (Present Continuous) ayırt et. Cümlelerini kısa ve doğru tut.",
+      3: "Geçmiş zaman ve \"will\" gibi farklı zamanları, and/but/because bağlaçlarını doğru kullan.",
+      4: "Dilbilgin sağlam. \"if…\", \"because of…\" gibi daha karmaşık yapılarla zenginleştirebilirsin."
     }
   },
   {
@@ -78,6 +102,12 @@ const CRITERIA = [
       3: "Görevi büyük ölçüde karşılar; konuya uygun birkaç fikir sunar.",
       2: "Görevi kısmen karşılar; fikirler sınırlı veya yüzeyseldir.",
       1: "Görevi karşılamaz; konuyla ilgisiz veya çok yetersizdir."
+    },
+    advice: {
+      1: "Önce soruyu yanıtladığından emin ol. Konuyla ilgili en az 3 fikir söyle.",
+      2: "Her fikrini bir nedenle destekle (\"because…\") ve bir örnek ekle.",
+      3: "Cevabını giriş–gelişme–sonuç şeklinde düzenle ve biraz daha ayrıntı ver.",
+      4: "İçeriğin güçlü. Kişisel görüş ve örneklerle konuyu daha da derinleştirebilirsin."
     }
   }
 ];
