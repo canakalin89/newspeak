@@ -5,18 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>İngilizce Konuşma Becerisi Değerlendirme · 9. Sınıf</title>
   <meta name="description" content="Türkiye Yüzyılı Maarif Modeli'ne uygun, 9. sınıf öğrencileri için İngilizce konuşma becerisi değerlendirme uygulaması." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
-      <span class="brand-badge">TYMM</span>
-      <div>
-        <h1>İngilizce Konuşma Becerisi Değerlendirme</h1>
-        <p class="subtitle">Türkiye Yüzyılı Maarif Modeli'ne uygun · 9. Sınıf · Öğretmen Aracı</p>
+      <span class="brand-mark" aria-hidden="true">İng</span>
+      <div class="brand-text">
+        <p class="eyebrow">9. Sınıf · İngilizce · Konuşma Becerisi</p>
+        <h1>Konuşma Becerisi Değerlendirme</h1>
+        <p class="subtitle">Türkiye Yüzyılı Maarif Modeli'ne uygun öğretmen değerlendirme aracı</p>
       </div>
     </div>
-    <button id="newAssessmentBtn" class="btn btn-ghost" type="button" hidden>+ Yeni Değerlendirme</button>
+    <button id="newAssessmentBtn" class="btn btn-ghost" type="button" hidden>Yeni Değerlendirme</button>
   </header>
 
   <main class="container">
@@ -75,8 +79,8 @@
           <span id="recTimer" class="rec-timer">00:00</span>
         </div>
         <div class="recorder-controls">
-          <button id="startBtn" class="btn btn-primary" type="button">● Kaydı Başlat</button>
-          <button id="stopBtn" class="btn btn-danger" type="button" disabled>■ Durdur</button>
+          <button id="startBtn" class="btn btn-primary" type="button"><span class="btn-rec-dot"></span>Kaydı Başlat</button>
+          <button id="stopBtn" class="btn btn-danger" type="button" disabled>Durdur</button>
         </div>
       </div>
 
@@ -108,7 +112,7 @@
       </div>
 
       <div id="audioPanel" class="audio-panel" hidden>
-        <h3>🎧 Ses Kaydı & Akustik Ölçümler</h3>
+        <h3>Ses Kaydı &amp; Akustik Ölçümler</h3>
         <p class="audio-hint">Öğrencinin sesini dinleyip puanları gerektiğinde elle düzeltebilirsiniz. Aşağıdaki ölçümler doğrudan ses dalgasından çıkarılır (metinden bağımsız).</p>
         <audio id="audioPlayer" controls></audio>
         <div id="acousticChips" class="acoustic-chips"></div>
@@ -129,9 +133,9 @@
       <div class="row-between">
         <button id="backToRecordBtn" class="btn btn-ghost" type="button">← Kayda Dön</button>
         <div class="result-actions">
-          <button id="printBtn" class="btn btn-ghost" type="button">🖨 Yazdır / PDF</button>
-          <button id="downloadAudioBtn" class="btn btn-ghost" type="button" hidden>⬇ Sesi İndir</button>
-          <button id="exportBtn" class="btn btn-ghost" type="button">⬇ JSON Kaydet</button>
+          <button id="printBtn" class="btn btn-ghost" type="button">Yazdır / PDF</button>
+          <button id="downloadAudioBtn" class="btn btn-ghost" type="button" hidden>Sesi İndir</button>
+          <button id="exportBtn" class="btn btn-ghost" type="button">JSON Kaydet</button>
           <button id="finishBtn" class="btn btn-primary" type="button">Kaydet & Bitir</button>
         </div>
       </div>
