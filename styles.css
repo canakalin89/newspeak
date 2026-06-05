@@ -84,6 +84,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 .muted-note { color: var(--muted); font-size: .86rem; margin: 0 0 16px; }
 .add-row { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
 .add-row input { flex: 1; min-width: 200px; }
+.add-row .no-input { flex: 0 0 90px; min-width: 64px; }
 .table-scroll { overflow-x: auto; }
 
 /* Sınıf yönetimi */

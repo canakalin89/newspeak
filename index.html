@@ -275,15 +275,16 @@
         </table>
 
         <div class="add-row">
-          <input id="newStudentName" type="text" placeholder="Tek öğrenci ekle — Ad Soyad" autocomplete="off" />
+          <input id="newStudentNo" type="text" inputmode="numeric" class="no-input" placeholder="No" autocomplete="off" />
+          <input id="newStudentName" type="text" placeholder="Ad Soyad" autocomplete="off" />
           <button id="addStudentBtn" class="btn btn-ghost" type="button">Ekle</button>
         </div>
 
         <label class="field">
-          <span>Toplu öğrenci ekle (her satıra bir isim)</span>
-          <textarea id="bulkStudents" rows="6" placeholder="Ayşe Yılmaz
-Mehmet Demir
-Zeynep Kaya
+          <span>Toplu öğrenci ekle (her satıra: <strong>No Ad Soyad</strong>)</span>
+          <textarea id="bulkStudents" rows="6" placeholder="101 Ayşe Yılmaz
+102 Mehmet Demir
+103 Zeynep Kaya
 ..."></textarea>
         </label>
         <button id="bulkAddBtn" class="btn btn-primary" type="button">Listeyi Ekle</button>

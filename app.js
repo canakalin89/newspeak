@@ -936,6 +936,7 @@
   }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function currentClass() { return state.classes.find((c) => c.id === state.currentClassId) || null; }
+  function studentNo(s, i) { return (s.no != null && s.no !== "") ? String(s.no) : String(i + 1); }
 
   function addClass() {
     const inp = $("newClassName");
@@ -962,11 +963,13 @@
   function addStudentSingle() {
     const cls = currentClass(); if (!cls) return;
     const inp = $("newStudentName");
+    const noInp = $("newStudentNo");
     const name = inp.value.trim();
     if (!name) { inp.focus(); return; }
-    cls.students.push({ id: uid(), name: name });
+    cls.students.push({ id: uid(), no: noInp.value.trim(), name: name });
     saveClasses();
-    inp.value = "";
+    noInp.value = ""; inp.value = "";
+    noInp.focus();
     renderClassDetail();
   }
 
@@ -974,7 +977,13 @@
     const cls = currentClass(); if (!cls) return;
     const lines = $("bulkStudents").value.split(/\n+/).map((s) => s.trim()).filter(Boolean);
     if (!lines.length) return;
-    lines.forEach((name) => cls.students.push({ id: uid(), name: name }));
+    lines.forEach((line) => {
+      // "101 Ayşe Yılmaz" / "101. Ad" / "101) Ad" / "101- Ad" → no + ad; numarasız satır = sadece ad
+      const m = line.match(/^(\d+)[\s.\-)]+(.+)$/);
+      const no = m ? m[1] : "";
+      const name = m ? m[2].trim() : line;
+      if (name) cls.students.push({ id: uid(), no: no, name: name });
+    });
     saveClasses();
     $("bulkStudents").value = "";
     toast(`${lines.length} öğrenci eklendi.`);
@@ -1011,7 +1020,7 @@
     $("classStudentCount").textContent = `${cls.students.length} öğrenci`;
     const body = $("studentList");
     body.innerHTML = cls.students.map((s, i) =>
-      `<tr><td>${i + 1}</td><td>${escapeHtml(s.name)}</td>
+      `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td>
          <td style="text-align:right"><button class="link-danger" data-id="${s.id}">Sil</button></td></tr>`).join("")
       || `<tr><td colspan="3" class="muted-note" style="padding:12px 0">Henüz öğrenci yok.</td></tr>`;
     body.querySelectorAll(".link-danger").forEach((b) => b.addEventListener("click", () => deleteStudent(b.dataset.id)));
@@ -1070,7 +1079,7 @@
         ? `<span class="status-chip status-done">Tamamlandı</span>`
         : `<span class="status-chip status-pending">Bekliyor</span>`;
       const btn = `<button class="btn btn-ghost btn-sm" data-id="${s.id}">${rec ? "Tekrar" : "Değerlendir"}</button>`;
-      return `<tr><td>${i + 1}</td><td>${escapeHtml(s.name)}</td><td>${status}</td><td>${rec ? "<strong>" + rec.total + "</strong>" : "—"}</td><td style="text-align:right">${btn}</td></tr>`;
+      return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td><td>${status}</td><td>${rec ? "<strong>" + rec.total + "</strong>" : "—"}</td><td style="text-align:right">${btn}</td></tr>`;
     }).join("");
     $("examStudentList").querySelectorAll("button[data-id]").forEach((b) =>
       b.addEventListener("click", () => evaluateExamStudent(b.dataset.id)));
@@ -1098,7 +1107,7 @@
       const rec = state.exam.results[s.id];
       const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : "—"; };
       if (rec) { sum += rec.total; n++; }
-      return `<tr><td>${i + 1}</td><td>${escapeHtml(s.name)}</td>
+      return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td>
         <td>${cell("uyum")}</td><td>${cell("organizasyon")}</td><td>${cell("sunum")}</td><td>${cell("dil")}</td><td>${cell("yaraticilik")}</td>
         <td><strong>${rec ? rec.total : "—"}</strong></td><td>${rec ? escapeHtml(rec.level) : "—"}</td></tr>`;
     }).join("");
@@ -1114,7 +1123,7 @@
     cls.students.forEach((s, i) => {
       const rec = state.exam.results[s.id];
       const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : ""; };
-      lines.push([i + 1, csv(s.name), cell("uyum"), cell("organizasyon"), cell("sunum"), cell("dil"), cell("yaraticilik"), rec ? rec.total : "", rec ? csv(rec.level) : ""].join(";"));
+      lines.push([csv(studentNo(s, i)), csv(s.name), cell("uyum"), cell("organizasyon"), cell("sunum"), cell("dil"), cell("yaraticilik"), rec ? rec.total : "", rec ? csv(rec.level) : ""].join(";"));
     });
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -1226,6 +1235,7 @@
     $("newClassName").addEventListener("keydown", (e) => { if (e.key === "Enter") addClass(); });
     $("deleteClassBtn").addEventListener("click", deleteCurrentClass);
     $("addStudentBtn").addEventListener("click", addStudentSingle);
+    $("newStudentNo").addEventListener("keydown", (e) => { if (e.key === "Enter") $("newStudentName").focus(); });
     $("newStudentName").addEventListener("keydown", (e) => { if (e.key === "Enter") addStudentSingle(); });
     $("bulkAddBtn").addEventListener("click", bulkAddStudents);
 
