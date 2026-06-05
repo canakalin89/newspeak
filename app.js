@@ -327,8 +327,6 @@
     const clean = text.trim().replace(/\s+/g, " ");
     const words = tokenize(clean);
     const wordCount = words.length;
-    const minutes = Math.max(state.elapsedMs / 60000, wordCount / 130); // süre yoksa metinden tahmin
-    const wpm = wordCount > 0 ? wordCount / minutes : 0;
 
     // Cümle bölme (STT noktalama koymayabilir; yine de en iyi gayretle)
     const sentences = clean.split(/[.!?]+|\n/).map((s) => s.trim()).filter(Boolean);
@@ -336,117 +334,95 @@
     const avgSentLen = sentenceCount ? wordCount / sentenceCount : 0;
 
     const uniqueWords = new Set(words);
-    const ttr = wordCount ? uniqueWords.size / wordCount : 0; // tür-belirteç oranı
-
-    const ac = state.acoustic;                       // akustik ses ölçümleri (varsa)
-    const fillerCount = countFillers(clean);
-    // Konuşma hızı: akustik konuşma süresi varsa onu kullan (sessizlikleri dışlar)
-    const speechSec = ac && ac.speechSec ? ac.speechSec : Math.max(state.elapsedMs / 1000, wordCount / 2.2);
-    const wps = speechSec > 0 ? wordCount / speechSec : 0;  // tanınan kelime / konuşma sn
-
-    // ----- 1) AKICILIK ----- (GERÇEK SES ANALİZİNDEN)
-    // Akustik akıcılık: konuşma/sessizlik oranı, uzun duraklamalar, hece hızı.
-    let fluency;
-    if (ac) {
-      fluency = ac.fluencyScore;
-      fluency -= Math.min(fillerCount * 3, 15); // dolgu sesleri küçük ek ceza
-    } else {
-      // Ses analizi yoksa (elle giriş) metinden tahmin
-      fluency = clamp(map(wpm, 40, 110, 35, 100), 0, 100);
-      fluency -= Math.min(fillerCount * 4, 25);
-      fluency -= Math.min(countImmediateRepeats(words) * 5, 20);
-      if (wordCount < 8) fluency = Math.min(fluency, 35);
-    }
-    fluency = clamp(fluency, 0, 100);
-
-    // ----- 2) TELAFFUZ ----- (SES + ANLAŞILIRLIK)
-    // Telaffuz, sesin anlaşılırlığından ölçülür: çok konuşup az tanınır kelime
-    // çıkması (kötü İngilizce) düşük puan verir. Tonlama ve tanıma güveni katkı yapar.
-    let pronunciation;
-    const confScore = state.confidences.length
-      ? clamp(map(avg(state.confidences), 0.55, 0.92, 40, 100), 0, 100)
-      : (ac ? 60 : 70);
-    if (ac) {
-      // Anlaşılırlık: ses var ama tanınan kelime az ise düşük (kötü telaffuz işareti)
-      const intelligibility = clamp(map(wps, 0.3, 1.8, 20, 100), 0, 100);
-      pronunciation = confScore * 0.45 + intelligibility * 0.35 + ac.intonationScore * 0.20;
-      // Bol ses, neredeyse hiç tanınır kelime yok => belirgin "anlaşılmaz" sinyali
-      if (ac.speechSec >= 6 && wordCount < 5) pronunciation = Math.min(pronunciation, 30);
-      if (ac.speechSec < 2) pronunciation = Math.min(pronunciation, 45); // çok az konuştu
-    } else if (state.confidences.length) {
-      pronunciation = confScore;
-    } else {
-      pronunciation = 70; // elle giriş; öğretmen düzeltir
-    }
-    if (wordCount < 8 && (!ac || wordCount === 0)) pronunciation = Math.min(pronunciation, 50);
-    pronunciation = clamp(pronunciation, 0, 100);
-
-    // ----- 3) SÖZ DAĞARCIĞI -----
-    // Tür-belirteç oranı + içerik (stopword olmayan benzersiz) sözcük sayısı.
+    const ttr = wordCount ? uniqueWords.size / wordCount : 0;           // tür-belirteç oranı
     const contentWords = [...uniqueWords].filter((w) => !STOPWORDS.has(w) && w.length > 2);
-    let vocabulary = clamp(
-      map(ttr, 0.35, 0.7, 40, 95) * 0.5 +
-      map(contentWords.length, 4, 30, 40, 100) * 0.5,
-      0, 100
-    );
-    if (wordCount < 8) vocabulary = Math.min(vocabulary, 40);
-    vocabulary = clamp(vocabulary, 0, 100);
+    const advancedWords = contentWords.filter((w) => w.length >= 7).length;
+    const structureSignals = countStructureSignals(clean);             // bağlaç/zaman çeşitliliği
+    const fillerCount = countFillers(clean);
 
-    // ----- 4) DİLBİLGİSİ -----
-    // Sezgisel: cümle uzunluğu dengesi, yapı çeşitliliği (zaman/bağlaç işaretleri).
-    let grammar = clamp(map(avgSentLen, 3, 9, 45, 90), 0, 100);
-    const structureSignals = countStructureSignals(clean);
-    grammar += Math.min(structureSignals * 3, 15);
-    if (avgSentLen > 22) grammar -= 15; // bölünememiş, kontrolsüz uzun ileti
-    if (wordCount < 8) grammar = Math.min(grammar, 45);
-    grammar = clamp(grammar, 0, 100);
+    const ac = state.acoustic;                                          // akustik ses ölçümleri (varsa)
+    const speechSec = ac && ac.speechSec ? ac.speechSec : Math.max(state.elapsedMs / 1000, wordCount / 2.2);
+    const wps = speechSec > 0 ? wordCount / speechSec : 0;              // tanınan kelime / konuşma sn
+    const wpm = Math.round(wps * 60);
 
-    // ----- 5) İÇERİK & GÖREV BAŞARIMI -----
     const kw = state.task.keywords || [];
     const hits = kw.filter((k) => uniqueWords.has(k.toLowerCase())).length;
     const coverage = kw.length ? hits / kw.length : 0;
-    const lengthScore = map(wordCount, 10, 70, 40, 100);
-    let content = clamp(coverage * 100 * 0.5 + lengthScore * 0.5, 0, 100);
-    if (wordCount < 8) content = Math.min(content, 30);
-    content = clamp(content, 0, 100);
 
-    // ----- KONUŞMA VAR MI? (gürültü / sessizlik kapısı) -----
-    // Sorun: map() alt sınırları nedeniyle sıfır girdi bile taban puan üretir ve
-    // arka plan gürültüsü "konuşma" sayılır. Çözüm: gerçek konuşma varlığına göre
-    // ölçekle. Metin ölçütleri tanınan kelimeye, akustik ölçütler sesli (F0'lı)
-    // kare oranı + hece yapısına bağlanır.
-    const intelligibleContent = clamp(wordCount / 8, 0, 1); // 0 kelime => 0
-    vocabulary *= intelligibleContent;
-    grammar *= intelligibleContent;
-    content *= intelligibleContent;
-
-    let presence = 1; // akustik yoksa (elle giriş) ölçekleme uygulanmaz
+    // ---- konuşma varlığı kapısı (gürültü/sessizlik ayrımı) ----
+    const intelligibleContent = clamp(wordCount / 8, 0, 1);            // metin ölçütleri için (0 kelime => 0)
+    let presence = 1;                                                  // akustik ölçütler için
     if (ac) {
-      const vr = clamp((ac.voicedRatio || 0) / 0.20, 0, 1);  // sesli kare oranı
-      const syl = clamp((ac.syllables || 0) / 10, 0, 1);      // hece yapısı
-      const acousticSpeech = Math.min(vr, syl);               // ikisi de gerekli
-      // Tanınan kelimeler güçlü kanıt; ikisinden büyüğünü al
-      presence = Math.max(acousticSpeech, clamp(wordCount / 5, 0, 1));
+      const vr = clamp((ac.voicedRatio || 0) / 0.20, 0, 1);            // sesli (F0'lı) kare oranı
+      const syl = clamp((ac.syllables || 0) / 10, 0, 1);              // hece yapısı
+      presence = Math.max(Math.min(vr, syl), clamp(wordCount / 5, 0, 1));
     }
-    fluency *= presence;
-    pronunciation *= presence;
+
+    // ===== 1) UYUM — göreve/konuya uygunluk =====
+    const lengthPresence = map(wordCount, 8, 60, 35, 100);
+    let uyum = clamp(coverage * 100 * 0.6 + lengthPresence * 0.4, 0, 100);
+    uyum *= intelligibleContent;
+
+    // ===== 2) ORGANİZASYON — düzen, bağlaçlar, giriş-gelişme-sonuç =====
+    let organizasyon = clamp(
+      map(sentenceCount, 1, 5, 40, 85) * 0.5 +
+      map(structureSignals, 1, 7, 40, 95) * 0.5,
+      0, 100
+    );
+    if (avgSentLen > 22) organizasyon -= 12;                           // bölünememiş, kontrolsüz akış
+    organizasyon = clamp(organizasyon, 0, 100) * intelligibleContent;
+
+    // ===== 3) SUNUM — akıcılık + telaffuz/anlaşılırlık (GERÇEK SES) =====
+    let sunum;
+    if (ac) {
+      const intelligibility = clamp(map(wps, 0.3, 1.8, 20, 100), 0, 100);
+      const confScore = state.confidences.length
+        ? clamp(map(avg(state.confidences), 0.55, 0.92, 40, 100), 0, 100) : 60;
+      sunum = ac.fluencyScore * 0.40 + intelligibility * 0.25 + confScore * 0.18
+        + ac.intonationScore * 0.09 + ac.deliveryScore * 0.08;
+      sunum -= Math.min(fillerCount * 3, 15);
+      if (ac.speechSec >= 6 && wordCount < 5) sunum = Math.min(sunum, 30); // bol ses, anlaşılır kelime yok
+    } else {
+      // Ses analizi yoksa (elle giriş) metinden tahmin
+      sunum = clamp(map(wpm, 40, 110, 35, 95), 0, 100) - Math.min(fillerCount * 4, 25);
+    }
+    sunum = clamp(sunum, 0, 100) * presence;
+
+    // ===== 4) DİL — dilbilgisi + söz dağarcığı =====
+    let grammarScore = clamp(map(avgSentLen, 3, 9, 45, 90) + Math.min(structureSignals * 3, 15), 0, 100);
+    if (avgSentLen > 22) grammarScore -= 15;
+    const vocabScore = clamp(
+      map(ttr, 0.35, 0.7, 40, 95) * 0.5 + map(contentWords.length, 4, 30, 40, 100) * 0.5, 0, 100
+    );
+    let dil = clamp(grammarScore * 0.5 + vocabScore * 0.5, 0, 100);
+    dil *= intelligibleContent;
+
+    // ===== 5) YARATICILIK — özgünlük, ifade zenginliği (sezgisel) =====
+    let yaraticilik = clamp(
+      map(ttr, 0.4, 0.75, 35, 90) * 0.4 +
+      map(advancedWords, 1, 8, 40, 95) * 0.3 +
+      map(contentWords.length, 5, 25, 40, 95) * 0.3,
+      0, 100
+    );
+    yaraticilik *= intelligibleContent;
+    yaraticilik = Math.min(yaraticilik, 88);                           // öznel ölçüt: tavan törpülenir, öğretmen artırır
 
     // Gerçek konuşma yok (gürültü/sessizlik) => açıkça sıfır
     const noSpeech = (wordCount === 0) && (!ac || presence < 0.15);
-    if (noSpeech) { fluency = pronunciation = vocabulary = grammar = content = 0; }
+    if (noSpeech) { uyum = organizasyon = sunum = dil = yaraticilik = 0; }
 
     const raw = {
-      fluency: Math.round(fluency),
-      pronunciation: Math.round(pronunciation),
-      vocabulary: Math.round(vocabulary),
-      grammar: Math.round(grammar),
-      content: Math.round(content)
+      uyum: Math.round(clamp(uyum, 0, 100)),
+      organizasyon: Math.round(clamp(organizasyon, 0, 100)),
+      sunum: Math.round(clamp(sunum, 0, 100)),
+      dil: Math.round(clamp(dil, 0, 100)),
+      yaraticilik: Math.round(clamp(yaraticilik, 0, 100))
     };
 
     return {
       raw,
       metrics: {
-        wordCount, wpm: Math.round(wpm), sentenceCount, ttr: round2(ttr), fillerCount,
+        wordCount, wpm, sentenceCount, ttr: round2(ttr), fillerCount,
         keywordHits: hits, keywordTotal: kw.length,
         wordsPerSpeechSec: round2(wps),
         presence: round2(presence),

@@ -16,98 +16,98 @@
 /* ------------------------------------------------------------------ */
 const CRITERIA = [
   {
-    id: "fluency",
-    name: "Akıcılık",
-    en: "Fluency",
+    id: "uyum",
+    name: "Uyum",
+    en: "Relevance",
     weight: 0.20,
-    desc: "Konuşmanın hızı, sürekliliği; gereksiz duraklama ve tekrar olmadan ileti kurabilme.",
+    desc: "Konuşmanın verilen göreve ve konuya uygunluğu; sorulanı karşılaması.",
     bands: {
-      4: "Doğal bir hızda, kesintisiz ve rahat konuşur; duraksamalar iletiyi bozmaz.",
-      3: "Genel olarak akıcıdır; ara sıra duraklasa da konuşmayı sürdürür.",
-      2: "Sık duraklar ve kendini tekrar eder; konuşma parça parçadır.",
-      1: "Çok yavaş ve kopuk; sözcük sözcük ilerler, ileti tamamlanamaz."
+      4: "Konuşma göreve tümüyle uygundur; konudan sapmadan beklenenleri karşılar.",
+      3: "Konuşma büyük ölçüde konuya uygundur; küçük sapmalar olabilir.",
+      2: "Konuşma kısmen konuyla ilgilidir; sık sık konudan uzaklaşır.",
+      1: "Konuşma konuyla ilgisizdir veya görevi karşılamaz."
     },
     advice: {
-      1: "Kısa kalıplarla başla: \"I like… because…\", \"I think…\". Cevabını söylemeden önce içinden kur, sonra duraklamadan söyle.",
-      2: "Konuşmadan önce 3–4 cümle planla. Düşünürken susmak yerine \"well…\", \"let me see…\" gibi köprü ifadeler kullan.",
-      3: "Cümleleri and / but / because / so ile birbirine bağla. Cevabını evde sesli kaydedip dinle.",
-      4: "Akıcılığın iyi. Doğal vurgu ve duraklamalarla bu seviyeyi koru; daha uzun konuşmalar dene."
+      1: "Önce görevi/soruyu dikkatle oku. Cevabını doğrudan konuyla ilgili tut, alakasız ayrıntılardan kaçın.",
+      2: "Her cümleni sorulan konuya bağla; konudan uzaklaştığını fark edince ana fikre geri dön.",
+      3: "Görevin tüm bölümlerini (kim / ne / neden) yanıtladığından emin ol.",
+      4: "Konuya tam uyumlusun; aynı odakla daha fazla ilgili ayrıntı ekleyebilirsin."
     }
   },
   {
-    id: "pronunciation",
-    name: "Telaffuz",
-    en: "Pronunciation",
+    id: "organizasyon",
+    name: "Organizasyon",
+    en: "Organization",
     weight: 0.20,
-    desc: "Sözcüklerin anlaşılır biçimde seslendirilmesi; vurgu ve tonlamanın iletiyi desteklemesi.",
+    desc: "Fikirlerin düzeni ve akışı; giriş–gelişme–sonuç ve bağlaçlarla bağlantı.",
     bands: {
-      4: "Telaffuz çok anlaşılır; sözcükler net seslendirilir.",
-      3: "Genellikle anlaşılır; küçük telaffuz hataları iletiyi engellemez.",
-      2: "Telaffuz hataları zaman zaman anlaşılmayı güçleştirir.",
-      1: "Telaffuz büyük ölçüde anlaşılmaz; dinleyici çoğu sözcüğü çözemez."
+      4: "Fikirler açık bir düzende sunulur; giriş, gelişme ve sonuç birbirine bağlıdır.",
+      3: "Konuşmanın genel bir düzeni vardır; geçişler çoğunlukla anlaşılırdır.",
+      2: "Fikirler dağınıktır; sıralama ve bağlantılar zayıftır.",
+      1: "Konuşmanın düzeni yoktur; fikirler kopuk ve karışıktır."
     },
     advice: {
-      1: "Kelimeleri sözlükten dinle (audio) ve yüksek sesle tekrar et. Önce tek tek, net söylemeye çalış.",
-      2: "Zorlandığın sesleri ayrı çalış (th, w, v, r). Kısa metinleri sesli oku ve kendini kaydedip dinle.",
-      3: "Cümle vurgusuna ve tonlamaya odaklan. Film/şarkı eşliğinde \"shadowing\" (arkasından tekrar) yap.",
-      4: "Telaffuzun net. Bağlı konuşmada (linking) ritmi geliştirerek daha doğal bir tını yakalayabilirsin."
+      1: "Kısa bir giriş cümlesiyle başla, sonra fikirlerini tek tek sırayla söyle.",
+      2: "Fikirlerini \"first, then, finally\" gibi sıralama sözcükleriyle bağla.",
+      3: "Cümleleri and / but / because / so ile bağla ve bir sonuç cümlesiyle bitir.",
+      4: "Düzenin güçlü; farklı geçiş ifadeleriyle akışı daha da zenginleştirebilirsin."
     }
   },
   {
-    id: "vocabulary",
-    name: "Söz Dağarcığı",
-    en: "Vocabulary",
+    id: "sunum",
+    name: "Sunum",
+    en: "Delivery",
     weight: 0.20,
-    desc: "Konuya uygun, çeşitli ve doğru sözcük kullanımı; tekrara düşmeden ifade zenginliği.",
+    desc: "Akıcılık, telaffuz ve sesin anlaşılırlığı; özgüvenli ve net sunuş.",
     bands: {
-      4: "Konuya uygun, çeşitli ve yerinde sözcükler kullanır; ifade zengindir.",
-      3: "Yeterli sözcük dağarcığıyla iletiyi kurar; ara sıra tekrar eder.",
-      2: "Sınırlı ve tekrarlı sözcükler kullanır; ifadeler kısıtlıdır.",
-      1: "Çok az sözcükle, dağınık ve konu dışı ifadeler kurar."
+      4: "Akıcı, net ve anlaşılır konuşur; duraksamalar iletiyi bozmaz.",
+      3: "Genelde akıcı ve anlaşılırdır; ara sıra duraklar.",
+      2: "Sık duraklar; telaffuz ve akış anlaşılmayı güçleştirir.",
+      1: "Çok kopuk ve anlaşılmaz; ileti dinleyiciye ulaşmaz."
     },
     advice: {
-      1: "Konuyla ilgili 10 temel kelimeyi listele ve her birini bir cümlede kullan.",
-      2: "Aynı kelimeyi tekrar etmek yerine eş anlamlılarını öğren (good → nice, great, wonderful).",
-      3: "Konuya özel kalıplar ve birkaç deyim ekle. Öğrendiğin yeni kelimeyi kendi cümlende kullan.",
-      4: "Söz dağarcığın zengin. Daha az yaygın, konuya özgü kelimelerle ifadeni çeşitlendirebilirsin."
+      1: "Kısa cümlelerle, acele etmeden konuş; kelimeleri yüksek sesle ve net söylemeye çalış.",
+      2: "Konuşmadan önce fikrini kur; duraklarken \"well…\" gibi köprü ifadeler kullan, zor sesleri çalış.",
+      3: "Cümle vurgusu ve tonlamaya odaklan; konuşmanı kaydedip dinle.",
+      4: "Sunumun akıcı ve net; doğal vurgularla bu seviyeyi koru."
     }
   },
   {
-    id: "grammar",
-    name: "Dilbilgisi",
-    en: "Grammar / Accuracy",
+    id: "dil",
+    name: "Dil",
+    en: "Language Use",
     weight: 0.20,
-    desc: "Cümle yapısının doğruluğu; uygun zaman ve yapıların hatasız kullanımı.",
+    desc: "Dilbilgisi doğruluğu ve söz dağarcığının çeşitliliği; doğru ve zengin ifade.",
     bands: {
-      4: "Çeşitli yapıları büyük ölçüde doğru kullanır; hatalar nadirdir.",
-      3: "Temel yapıları doğru kurar; bazı hatalar olsa da ileti anlaşılır.",
-      2: "Sık dilbilgisi hataları yapar; cümle yapısı zayıftır.",
-      1: "Cümle kuramaz; yapı hataları iletiyi anlaşılmaz kılar."
+      4: "Çeşitli yapı ve sözcükleri büyük ölçüde doğru kullanır; ifade zengindir.",
+      3: "Temel yapı ve sözcükleri doğru kullanır; bazı hatalar olsa da anlaşılır.",
+      2: "Sınırlı sözcük ve sık dilbilgisi hatasıyla konuşur.",
+      1: "Çok az sözcük ve yapı hatasıyla ileti kurulamaz."
     },
     advice: {
-      1: "Basit cümle düzenine odaklan: Özne + fiil + nesne. \"I am / He is\" kullanımını pekiştir.",
-      2: "Geniş zaman (Simple Present) ile şimdiki zamanı (Present Continuous) ayırt et. Cümlelerini kısa ve doğru tut.",
-      3: "Geçmiş zaman ve \"will\" gibi farklı zamanları, and/but/because bağlaçlarını doğru kullan.",
-      4: "Dilbilgin sağlam. \"if…\", \"because of…\" gibi daha karmaşık yapılarla zenginleştirebilirsin."
+      1: "Basit cümle düzenine odaklan (Özne + fiil + nesne) ve konu kelimelerini öğren.",
+      2: "Geniş/şimdiki zamanı doğru kullan; aynı kelime yerine eş anlamlılarını dene.",
+      3: "Farklı zamanları ve bağlaçları doğru kullan; yeni öğrendiğin kelimeleri cümlende kullan.",
+      4: "Dil kullanımın güçlü; daha karmaşık yapı ve konuya özgü sözcüklerle zenginleştir."
     }
   },
   {
-    id: "content",
-    name: "İçerik & Görev Başarımı",
-    en: "Content & Task Achievement",
+    id: "yaraticilik",
+    name: "Yaratıcılık",
+    en: "Creativity",
     weight: 0.20,
-    desc: "Verilen görevin/konunun kapsanması; fikirlerin ilgili, yeterli ve düzenli sunulması.",
+    desc: "Özgün fikirler, ifade zenginliği ve konuya kişisel/yaratıcı yaklaşım.",
     bands: {
-      4: "Görevi tam karşılar; konuyu ilgili ve yeterli ayrıntıyla geliştirir.",
-      3: "Görevi büyük ölçüde karşılar; konuya uygun birkaç fikir sunar.",
-      2: "Görevi kısmen karşılar; fikirler sınırlı veya yüzeyseldir.",
-      1: "Görevi karşılamaz; konuyla ilgisiz veya çok yetersizdir."
+      4: "Özgün fikirler ve zengin ifadelerle konuya yaratıcı bir yaklaşım sunar.",
+      3: "Birkaç özgün fikir ve örnekle konuyu kişiselleştirir.",
+      2: "Fikirler büyük ölçüde basmakalıptır; özgünlük sınırlıdır.",
+      1: "Özgün fikir yoktur; ifadeler çok kısa ve tekdüzedir."
     },
     advice: {
-      1: "Önce soruyu yanıtladığından emin ol. Konuyla ilgili en az 3 fikir söyle.",
-      2: "Her fikrini bir nedenle destekle (\"because…\") ve bir örnek ekle.",
-      3: "Cevabını giriş–gelişme–sonuç şeklinde düzenle ve biraz daha ayrıntı ver.",
-      4: "İçeriğin güçlü. Kişisel görüş ve örneklerle konuyu daha da derinleştirebilirsin."
+      1: "Kendi örneklerini ve duygularını ekle (\"I think…\", \"For example…\").",
+      2: "Konuya kişisel bir bakış ya da ilginç bir örnek kat.",
+      3: "Farklı fikirler ve betimleyici sözcüklerle ifadeni renklendir.",
+      4: "Yaratıcılığın güçlü; özgün benzetme ve örneklerle daha da ileri gidebilirsin."
     }
   }
 ];

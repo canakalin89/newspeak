@@ -18,12 +18,13 @@
   puanları teyit/düzelt edebilir, kaydı indirebilir.
 - 🗣️ **Konuşma tanıma (metin)** — Web Speech API ile konuşma ayrıca yazıya dökülür;
   söz dağarcığı, dilbilgisi ve içerik bu metinden ölçülür. Mikrofon yoksa metin elle girilebilir.
-- 📊 **5 ölçütlü değerlendirme** — Her ölçüt 0–100 ham puan ve 1–4 başarım düzeyi olarak gösterilir:
-  1. **Akıcılık** (Fluency)
-  2. **Telaffuz** (Pronunciation)
-  3. **Söz Dağarcığı** (Vocabulary)
-  4. **Dilbilgisi** (Grammar / Accuracy)
-  5. **İçerik & Görev Başarımı** (Content & Task Achievement)
+- 📊 **5 ölçütlü değerlendirme** — Her ölçüt %20 ağırlıklıdır (toplam 100); 0–100 ham
+  puan ve 1–4 başarım düzeyi olarak gösterilir:
+  1. **Uyum** (Relevance) — göreve/konuya uygunluk
+  2. **Organizasyon** (Organization) — düzen, bağlaçlar, giriş-gelişme-sonuç
+  3. **Sunum** (Delivery) — akıcılık, telaffuz, anlaşılırlık (gerçek ses analizinden)
+  4. **Dil** (Language Use) — dilbilgisi + söz dağarcığı
+  5. **Yaratıcılık** (Creativity) — özgünlük, ifade zenginliği
 - ✍️ **Öğretmen denetimi** — Otomatik puanlar bir ön öneridir; öğretmen her ölçütü
   elle düzeltebilir, toplam ve düzey anında güncellenir.
 - 📚 **Hazır konuşma görevleri** — 9. sınıf "Waymark" ders kitabının 8 temasıyla
@@ -59,12 +60,15 @@ python3 -m http.server 8000
 5 kriter iki kaynağı birleştirir:
 
 - **Sesten (akustik):**
-  - **Akıcılık** → konuşma/sessizlik oranı, uzun duraklamalar, hece hızı (sesin enerji
-    zarfından). Tamamen ses dalgasından, metinden bağımsız.
-  - **Telaffuz** → sesin *anlaşılırlığı*: çok konuşulup az tanınır kelime çıkması (kötü
-    İngilizce) düşük puan verir; ayrıca tonlama (pitch değişimi) ve tanıma güven skoru katkı yapar.
-- **Metinden:** **Söz Dağarcığı** (kelime çeşitliliği), **Dilbilgisi** (cümle yapısı),
-  **İçerik** (görev anahtar sözcüklerinin kapsanması + uzunluk).
+  - **Sunum** → konuşma/sessizlik oranı, uzun duraklamalar, hece hızı, sesin
+    *anlaşılırlığı* (çok konuşulup az tanınır kelime çıkması düşük puan verir), tonlama
+    ve tanıma güven skoru. Büyük ölçüde ses dalgasından, metinden bağımsız.
+- **Metinden:** **Uyum** (görev anahtar sözcüklerinin kapsanması + uzunluk),
+  **Organizasyon** (cümle sayısı, bağlaç/sıra sözcükleri), **Dil** (dilbilgisi yapısı +
+  söz dağarcığı çeşitliliği), **Yaratıcılık** (ifade zenginliği, daha az yaygın sözcükler).
+
+> Gürültü/sessizlikte "gerçek konuşma var mı" kapısı devreye girer (sesli/F0'lı kare
+> oranı + hece yapısı + tanınan kelime); konuşma yoksa puanlar sıfırlanır.
 
 Sonuç ekranında ses kaydının yanında akustik ölçümler (konuşma süresi, doluluk oranı,
 duraklama, hece/sn, tonlama, ses kararlılığı) ayrıca gösterilir. Ayrıntılı ölçüt
