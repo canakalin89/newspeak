@@ -73,15 +73,18 @@
       </div>
 
       <div class="recorder">
-        <div class="recorder-status">
-          <span id="recDot" class="rec-dot"></span>
-          <span id="recStatusText">Hazır</span>
-          <span id="recTimer" class="rec-timer">00:00</span>
+        <div class="recorder-top">
+          <div class="recorder-status">
+            <span id="recDot" class="rec-dot"></span>
+            <span id="recStatusText">Hazır</span>
+            <span id="recTimer" class="rec-timer">00:00</span>
+          </div>
+          <div class="recorder-controls">
+            <button id="startBtn" class="btn btn-primary" type="button"><span class="btn-rec-dot"></span>Kaydı Başlat</button>
+            <button id="stopBtn" class="btn btn-danger" type="button" disabled>Durdur</button>
+          </div>
         </div>
-        <div class="recorder-controls">
-          <button id="startBtn" class="btn btn-primary" type="button"><span class="btn-rec-dot"></span>Kaydı Başlat</button>
-          <button id="stopBtn" class="btn btn-danger" type="button" disabled>Durdur</button>
-        </div>
+        <canvas id="visualizer" class="visualizer" aria-hidden="true"></canvas>
       </div>
 
       <label class="field">

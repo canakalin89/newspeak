@@ -182,7 +182,10 @@
       };
     }
 
-    return { start: start, stop: stop };
+    // Canlı görselleştirici için AnalyserNode'a erişim (kayıt sürerken geçerli)
+    function getAnalyser() { return running ? analyser : null; }
+
+    return { start: start, stop: stop, getAnalyser: getAnalyser };
   }
 
   /* ===================== yardımcılar ===================== */

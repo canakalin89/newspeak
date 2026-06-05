@@ -32,6 +32,7 @@
     acoustic: null,      // ses dalgasından çıkarılan ölçümler
     audioBlob: null,     // ses kaydı (öğretmenin dinlemesi için)
     audioUrl: null,
+    vizRAF: null,        // canlı ses görselleştirici animasyon kimliği
     scores: null,        // hesaplanan { criterionId: {raw, band, ...} }
     history: loadHistory()
   };
@@ -94,6 +95,7 @@
 
   function resetRecording() {
     stopRecognition();
+    stopVisualizer();
     state.recording = false;
     state.elapsedMs = 0;
     state.finalText = "";
@@ -136,6 +138,7 @@
       $("recTimer").textContent = formatTime(ms);
     }, 250);
 
+    startVisualizer();
     startRecognition();
   }
 
@@ -144,6 +147,7 @@
     state.recording = false;
     state.elapsedMs = Date.now() - state.startTime;
     clearInterval(state.timerInt);
+    stopVisualizer();          // analiz bağlamı kapanmadan önce çizimi durdur
     stopRecognition();
     $("startBtn").disabled = false;
     $("stopBtn").disabled = true;
@@ -211,6 +215,99 @@
       try { state.recognizer.onend = null; state.recognizer.stop(); } catch (_) {}
       state.recognizer = null;
     }
+  }
+
+  /* ============================================================ */
+  /* CANLI SES GÖRSELLEŞTİRİCİ (frekans çubukları)               */
+  /* ============================================================ */
+  function sizeCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth || 600, h = canvas.clientHeight || 60;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    return canvas.getContext("2d");
+  }
+
+  function startVisualizer() {
+    const canvas = $("visualizer");
+    if (!canvas || !state.audio || !state.audio.getAnalyser) return;
+    const analyser = state.audio.getAnalyser();
+    if (!analyser) return;
+    const ctx = sizeCanvas(canvas);
+    state._vizResize = () => sizeCanvas(canvas);
+    window.addEventListener("resize", state._vizResize);
+
+    const bins = new Uint8Array(analyser.frequencyBinCount);
+    const BARS = 56;
+    const accent = (getComputedStyle(document.documentElement).getPropertyValue("--accent") || "#1f5132").trim();
+    const dpr = window.devicePixelRatio || 1;
+
+    const draw = () => {
+      state.vizRAF = requestAnimationFrame(draw);
+      let data;
+      try { analyser.getByteFrequencyData(bins); data = bins; } catch (_) { return; }
+      const w = canvas.width, h = canvas.height, mid = h / 2;
+      ctx.clearRect(0, 0, w, h);
+      const used = Math.floor(data.length * 0.42); // konuşma/ses bandı
+      const gap = 2 * dpr;
+      const bw = (w - (BARS - 1) * gap) / BARS;
+      for (let i = 0; i < BARS; i++) {
+        // logaritmik dağılım: düşük frekanslara daha çok çözünürlük
+        const s = Math.floor(Math.pow(i / BARS, 1.5) * used);
+        const e = Math.max(s + 1, Math.floor(Math.pow((i + 1) / BARS, 1.5) * used));
+        let sum = 0, n = 0;
+        for (let j = s; j < e && j < data.length; j++) { sum += data[j]; n++; }
+        const v = (n ? sum / n : 0) / 255;
+        const bh = Math.max(v * (h * 0.9), 2 * dpr);
+        const x = i * (bw + gap);
+        roundBar(ctx, x, mid - bh / 2, bw, bh, Math.min(bw / 2, 3 * dpr));
+        ctx.fillStyle = rgbaFromHex(accent, 0.32 + 0.68 * v);
+        ctx.fill();
+      }
+    };
+    draw();
+  }
+
+  function stopVisualizer() {
+    if (state.vizRAF) { cancelAnimationFrame(state.vizRAF); state.vizRAF = null; }
+    if (state._vizResize) { window.removeEventListener("resize", state._vizResize); state._vizResize = null; }
+    const canvas = $("visualizer");
+    if (canvas && canvas.getContext) drawIdleBaseline(canvas);
+  }
+
+  // Kayıt yokken sönük bir taban çizgisi göster
+  function drawIdleBaseline(canvas) {
+    const ctx = sizeCanvas(canvas);
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width, h = canvas.height, mid = h / 2;
+    ctx.clearRect(0, 0, w, h);
+    const BARS = 56, gap = 2 * dpr, bw = (w - (BARS - 1) * gap) / BARS;
+    ctx.fillStyle = rgbaFromHex("#1f5132", 0.14);
+    for (let i = 0; i < BARS; i++) {
+      const x = i * (bw + gap), bh = 2 * dpr;
+      roundBar(ctx, x, mid - bh / 2, bw, bh, 1 * dpr);
+      ctx.fill();
+    }
+  }
+
+  function roundBar(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function rgbaFromHex(hex, a) {
+    hex = hex.replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map((c) => c + c).join("");
+    const r = parseInt(hex.substr(0, 2), 16) || 31;
+    const g = parseInt(hex.substr(2, 2), 16) || 81;
+    const b = parseInt(hex.substr(4, 2), 16) || 50;
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
   }
 
   /* ============================================================ */
