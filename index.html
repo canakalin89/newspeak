@@ -29,6 +29,12 @@
     <section id="setupStep" class="card step">
       <h2 class="step-title"><span class="step-no">1</span> Öğrenci ve Görev Bilgileri</h2>
 
+      <p id="browserNote" class="browser-note">
+        <strong>Tarayıcı gereksinimi:</strong> En iyi sonuç için <strong>Google Chrome</strong> veya
+        <strong>Microsoft Edge</strong> kullanın ve mikrofon iznini verin. Konuşma tanıma, ses analizi
+        ve Whisper bu tarayıcılarda çalışır; Firefox/Safari'de bazı özellikler çalışmayabilir.
+      </p>
+
       <div class="grid-2">
         <label class="field">
           <span>Öğrenci Adı Soyadı <em class="optional">(isteğe bağlı)</em></span>
@@ -76,6 +82,14 @@
       <div class="record-task">
         <strong id="recordTaskTitle"></strong>
         <p id="recordTaskPrompt"></p>
+      </div>
+
+      <div id="whisperStatus" class="whisper-status" hidden>
+        <div class="ws-row">
+          <span class="ws-label"><span class="ws-dot"></span>Whisper modeli</span>
+          <span id="whisperStatusText" class="ws-text">hazırlanıyor…</span>
+        </div>
+        <div class="ws-bar"><div id="whisperBar" class="ws-bar-fill"></div></div>
       </div>
 
       <div class="recorder">

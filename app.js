@@ -60,13 +60,25 @@
     });
     renderTaskCard();
 
+    // Tarayıcı uyarısı: Chromium dışı tarayıcıda güçlendir
+    const isChromium = /Chrome|Chromium|Edg/.test(navigator.userAgent) && !!window.chrome;
+    if (!isChromium) {
+      const bn = $("browserNote");
+      if (bn) {
+        bn.classList.add("warn");
+        bn.innerHTML = "<strong>Dikkat:</strong> Şu an Chrome/Edge dışı bir tarayıcı kullanıyor olabilirsiniz. " +
+          "Otomatik konuşma tanıma, ses analizi ve Whisper düzgün çalışmayabilir. Lütfen " +
+          "<strong>Google Chrome</strong> veya <strong>Microsoft Edge</strong> ile açın.";
+      }
+    }
+
     // Web Speech API desteği kontrolü
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       const note = $("speechSupport");
       note.hidden = false;
       note.textContent =
-        "Bu tarayıcı otomatik konuşma tanımayı desteklemiyor (Chrome/Edge önerilir). " +
+        "Bu tarayıcı otomatik konuşma tanımayı desteklemiyor (Chrome/Edge gerekir). " +
         "Kayıt sırasında öğrencinin söylediklerini metin alanına elle yazarak yine de değerlendirme yapabilirsiniz.";
     }
 
@@ -88,7 +100,12 @@
   /* ============================================================ */
   function goToRecord() {
     state.useWhisper = !!($("useWhisper") && $("useWhisper").checked);
-    if (state.useWhisper) preloadWhisper(); // modeli arka planda erkenden indirmeye başla
+    const ws = $("whisperStatus");
+    if (state.useWhisper) {
+      preloadWhisper();              // modeli arka planda erkenden indirmeye başla
+    } else if (ws) {
+      ws.hidden = true;
+    }
     showStep("record");
     $("recordTaskTitle").textContent = state.task.title;
     $("recordTaskPrompt").textContent = state.task.prompt;
@@ -225,8 +242,26 @@
   /* ============================================================ */
   const WHISPER_MODEL = "Xenova/whisper-base.en"; // İngilizce, dengeli boyut/doğruluk
   let _whisperPipe = null, _whisperLoading = null;
+  const _wFiles = {}; // dosya bazında indirme ilerlemesi
 
-  function preloadWhisper() { getWhisper().catch(() => {}); }
+  function setWhisperUI(pct, text, cls) {
+    const box = $("whisperStatus");
+    if (!box) return;
+    box.hidden = false;
+    box.classList.remove("ready", "error");
+    if (cls) box.classList.add(cls);
+    const bar = $("whisperBar");
+    if (bar && pct != null) bar.style.width = clamp(pct, 0, 100) + "%";
+    const t = $("whisperStatusText");
+    if (t && text != null) t.textContent = text;
+  }
+
+  function preloadWhisper() {
+    setWhisperUI(0, "hazırlanıyor…");
+    getWhisper()
+      .then(() => setWhisperUI(100, "hazır ✓", "ready"))
+      .catch(() => setWhisperUI(100, "indirilemedi — tarayıcı tanıma kullanılacak", "error"));
+  }
 
   // transformers.js'i birden çok CDN'den dene (biri engelliyse diğeri)
   async function importTransformers() {
@@ -252,12 +287,16 @@
         const pipe = await mod.pipeline("automatic-speech-recognition", WHISPER_MODEL, {
           quantized: true,
           progress_callback: (p) => {
-            if (p && p.status === "progress" && p.progress != null) {
-              $("recStatusText").textContent = `Whisper modeli indiriliyor… %${Math.round(p.progress)}`;
-            }
+            if (!p || !p.file) return;
+            if (p.total) _wFiles[p.file] = { loaded: p.loaded || 0, total: p.total };
+            let L = 0, T = 0;
+            for (const k in _wFiles) { L += _wFiles[k].loaded; T += _wFiles[k].total; }
+            const pct = T ? (L / T) * 100 : 0;
+            if (pct < 100) setWhisperUI(pct, `indiriliyor… %${Math.round(pct)}`);
           }
         });
         _whisperPipe = pipe;
+        setWhisperUI(100, "hazır ✓", "ready");
         return pipe;
       })();
     }
