@@ -138,6 +138,12 @@
         pitchRangeSemitones = percentile(semis, 0.95) - percentile(semis, 0.05);
       }
 
+      // Sesli kare oranı: gerçek KONUŞMA göstergesi. İnsan sesinde 70–400 Hz
+      // aralığında düzenli temel frekans (F0) bulunur; arka plan gürültüsünde
+      // veya sessizlikte bulunmaz. Bu oran gürültü/sessizliği konuşmadan ayırır.
+      const voicedFrames = frames.filter((f) => f.f0 >= 70 && f.f0 <= 400).length;
+      const voicedRatio = frames.length ? voicedFrames / frames.length : 0;
+
       // Ses şiddeti ve kararlılığı (sesli karelerde)
       const loud = frames.filter((_, i) => voiced[i]).map((f) => f.rms);
       const loudnessMean = loud.length ? mean(loud) : 0;
@@ -176,6 +182,7 @@
         pitchRangeSemitones: round1(pitchRangeSemitones),
         loudnessMean: round2(loudnessMean),
         loudnessStability: round2(loudnessStability),
+        voicedRatio: round2(voicedRatio),
         fluencyScore: Math.round(fluencyScore),
         intonationScore: Math.round(intonationScore),
         deliveryScore: Math.round(deliveryScore)

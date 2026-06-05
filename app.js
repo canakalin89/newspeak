@@ -410,6 +410,31 @@
     if (wordCount < 8) content = Math.min(content, 30);
     content = clamp(content, 0, 100);
 
+    // ----- KONUŞMA VAR MI? (gürültü / sessizlik kapısı) -----
+    // Sorun: map() alt sınırları nedeniyle sıfır girdi bile taban puan üretir ve
+    // arka plan gürültüsü "konuşma" sayılır. Çözüm: gerçek konuşma varlığına göre
+    // ölçekle. Metin ölçütleri tanınan kelimeye, akustik ölçütler sesli (F0'lı)
+    // kare oranı + hece yapısına bağlanır.
+    const intelligibleContent = clamp(wordCount / 8, 0, 1); // 0 kelime => 0
+    vocabulary *= intelligibleContent;
+    grammar *= intelligibleContent;
+    content *= intelligibleContent;
+
+    let presence = 1; // akustik yoksa (elle giriş) ölçekleme uygulanmaz
+    if (ac) {
+      const vr = clamp((ac.voicedRatio || 0) / 0.20, 0, 1);  // sesli kare oranı
+      const syl = clamp((ac.syllables || 0) / 10, 0, 1);      // hece yapısı
+      const acousticSpeech = Math.min(vr, syl);               // ikisi de gerekli
+      // Tanınan kelimeler güçlü kanıt; ikisinden büyüğünü al
+      presence = Math.max(acousticSpeech, clamp(wordCount / 5, 0, 1));
+    }
+    fluency *= presence;
+    pronunciation *= presence;
+
+    // Gerçek konuşma yok (gürültü/sessizlik) => açıkça sıfır
+    const noSpeech = (wordCount === 0) && (!ac || presence < 0.15);
+    if (noSpeech) { fluency = pronunciation = vocabulary = grammar = content = 0; }
+
     const raw = {
       fluency: Math.round(fluency),
       pronunciation: Math.round(pronunciation),
@@ -424,6 +449,8 @@
         wordCount, wpm: Math.round(wpm), sentenceCount, ttr: round2(ttr), fillerCount,
         keywordHits: hits, keywordTotal: kw.length,
         wordsPerSpeechSec: round2(wps),
+        presence: round2(presence),
+        noSpeech: noSpeech,
         acoustic: ac || null
       }
     };
@@ -682,6 +709,12 @@
     const strongest = entries[entries.length - 1];
     const m = state.metrics || {};
     const parts = [];
+
+    // Hiç gerçek konuşma algılanmadıysa öncelikli olarak bunu bildir
+    if (m.noSpeech || (m.presence !== undefined && m.presence < 0.2 && (m.wordCount || 0) === 0)) {
+      return "Anlaşılır bir konuşma algılanmadı (yalnızca sessizlik veya arka plan gürültüsü). Lütfen öğrencinin mikrofona yeterince yüksek ve net konuştuğundan emin olup kaydı tekrarlayın.";
+    }
+
     parts.push(`Genel düzey: ${band.label}. ${band.hint}`);
     if (strongest.raw >= 60) parts.push(`Güçlü yön: ${strongest.c.name.toLowerCase()}.`);
     if (weakest.raw < 70) {
