@@ -30,6 +30,11 @@
   3. **Sunum** (Delivery) — akıcılık, telaffuz, anlaşılırlık (gerçek ses analizinden)
   4. **Dil** (Language Use) — dilbilgisi + söz dağarcığı
   5. **Yaratıcılık** (Creativity) — özgünlük, ifade zenginliği
+- 🏫 **Sınıf yönetimi** — Sınıf oluştur, öğrenci ekle/sil; **toplu öğrenci ekleme**
+  (her satıra bir isim yapıştır). Veriler tarayıcıda saklanır.
+- 📝 **Sınav modu** — Bir sınıf + konuşma görevi seç, tüm öğrencileri sırayla aynı görevle
+  değerlendir. İlerleme takibi, sınıf **özet tablosu** (kriter kırılımı + sınıf ortalaması)
+  ve **CSV / yazdırma** ile dışa aktarma.
 - ✍️ **Öğretmen denetimi** — Otomatik puanlar bir ön öneridir; öğretmen her ölçütü
   elle düzeltebilir, toplam ve düzey anında güncellenir.
 - 📚 **Hazır konuşma görevleri** — 9. sınıf "Waymark" ders kitabının 8 temasıyla

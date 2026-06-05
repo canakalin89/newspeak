@@ -34,7 +34,12 @@
     audioUrl: null,
     vizRAF: null,        // canlı ses görselleştirici animasyon kimliği
     scores: null,        // hesaplanan { criterionId: {raw, band, ...} }
-    history: loadHistory()
+    history: loadHistory(),
+    mode: "single",      // "single" | "exam"
+    view: "single",      // aktif sekme
+    classes: loadClasses(),
+    currentClassId: null,
+    exam: null           // { classId, className, task, whisper, results: {studentId: rec} }
   };
 
   /* ============================================================ */
@@ -99,14 +104,17 @@
   /* KAYIT ADIMI                                                  */
   /* ============================================================ */
   function goToRecord() {
-    state.useWhisper = !!($("useWhisper") && $("useWhisper").checked);
+    // Tekli modda Whisper seçeneği setup'taki checkbox'tan; sınav modunda state'ten gelir
+    if (state.mode !== "exam") {
+      state.useWhisper = !!($("useWhisper") && $("useWhisper").checked);
+    }
     const ws = $("whisperStatus");
     if (state.useWhisper) {
       preloadWhisper();              // modeli arka planda erkenden indirmeye başla
     } else if (ws) {
       ws.hidden = true;
     }
-    showStep("record");
+    showFlow("record");
     $("recordTaskTitle").textContent = state.task.title;
     $("recordTaskPrompt").textContent = state.task.prompt;
     resetRecording();
@@ -617,7 +625,7 @@
     state.metrics = metrics;
     state.transcriptText = text;
     renderResult();
-    showStep("result");
+    showFlow("result");
   }
 
   function renderResult() {
@@ -860,11 +868,19 @@
     state.history.unshift(rec);
     saveHistory(state.history);
     renderHistory();
+    // Sınav modu: sonucu sınava işle ve listeye dön
+    if (state.mode === "exam" && state.exam && state.examStudentId) {
+      state.exam.results[state.examStudentId] = rec;
+      toast("Öğrenci değerlendirmesi kaydedildi.");
+      resetForNew();
+      showView("exam");
+      return;
+    }
     $("historySection").hidden = false;
     $("newAssessmentBtn").hidden = false;
     toast("Değerlendirme bu oturuma kaydedildi.");
     resetForNew();
-    showStep("setup");
+    showView("single");
   }
 
   function exportJson() {
@@ -909,10 +925,233 @@
   }
 
   /* ============================================================ */
+  /* SINIF YÖNETİMİ (localStorage)                               */
+  /* ============================================================ */
+  function loadClasses() {
+    try { return JSON.parse(localStorage.getItem("tymm_classes") || "[]"); }
+    catch (_) { return []; }
+  }
+  function saveClasses() {
+    try { localStorage.setItem("tymm_classes", JSON.stringify(state.classes)); } catch (_) {}
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function currentClass() { return state.classes.find((c) => c.id === state.currentClassId) || null; }
+
+  function addClass() {
+    const inp = $("newClassName");
+    const name = inp.value.trim();
+    if (!name) { inp.focus(); return; }
+    const cls = { id: uid(), name: name, students: [] };
+    state.classes.push(cls);
+    saveClasses();
+    inp.value = "";
+    state.currentClassId = cls.id;
+    renderClasses();
+  }
+
+  function deleteCurrentClass() {
+    const cls = currentClass();
+    if (!cls) return;
+    if (!confirm(`"${cls.name}" sınıfı ve tüm öğrencileri silinsin mi?`)) return;
+    state.classes = state.classes.filter((c) => c.id !== cls.id);
+    state.currentClassId = null;
+    saveClasses();
+    renderClasses();
+  }
+
+  function addStudentSingle() {
+    const cls = currentClass(); if (!cls) return;
+    const inp = $("newStudentName");
+    const name = inp.value.trim();
+    if (!name) { inp.focus(); return; }
+    cls.students.push({ id: uid(), name: name });
+    saveClasses();
+    inp.value = "";
+    renderClassDetail();
+  }
+
+  function bulkAddStudents() {
+    const cls = currentClass(); if (!cls) return;
+    const lines = $("bulkStudents").value.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+    if (!lines.length) return;
+    lines.forEach((name) => cls.students.push({ id: uid(), name: name }));
+    saveClasses();
+    $("bulkStudents").value = "";
+    toast(`${lines.length} öğrenci eklendi.`);
+    renderClassDetail();
+  }
+
+  function deleteStudent(studentId) {
+    const cls = currentClass(); if (!cls) return;
+    cls.students = cls.students.filter((s) => s.id !== studentId);
+    saveClasses();
+    renderClassDetail();
+  }
+
+  function renderClasses() {
+    const list = $("classList");
+    $("noClassesHint").hidden = state.classes.length > 0;
+    list.innerHTML = state.classes.map((c) =>
+      `<div class="class-row ${c.id === state.currentClassId ? "is-active" : ""}" data-id="${c.id}">
+         <strong>${escapeHtml(c.name)}</strong>
+         <span class="count">${c.students.length} öğrenci</span>
+       </div>`).join("");
+    list.querySelectorAll(".class-row").forEach((row) => {
+      row.addEventListener("click", () => { state.currentClassId = row.dataset.id; renderClasses(); });
+    });
+    renderClassDetail();
+  }
+
+  function renderClassDetail() {
+    const cls = currentClass();
+    const box = $("classDetail");
+    if (!cls) { box.hidden = true; return; }
+    box.hidden = false;
+    $("classDetailName").textContent = cls.name;
+    $("classStudentCount").textContent = `${cls.students.length} öğrenci`;
+    const body = $("studentList");
+    body.innerHTML = cls.students.map((s, i) =>
+      `<tr><td>${i + 1}</td><td>${escapeHtml(s.name)}</td>
+         <td style="text-align:right"><button class="link-danger" data-id="${s.id}">Sil</button></td></tr>`).join("")
+      || `<tr><td colspan="3" class="muted-note" style="padding:12px 0">Henüz öğrenci yok.</td></tr>`;
+    body.querySelectorAll(".link-danger").forEach((b) => b.addEventListener("click", () => deleteStudent(b.dataset.id)));
+  }
+
+  /* ============================================================ */
+  /* SINAV MODU                                                  */
+  /* ============================================================ */
+  function renderExamView() {
+    if (state.exam) {
+      $("examSetup").hidden = true;
+      $("examSummary").hidden = true;
+      $("examRoster").hidden = false;
+      renderExamRoster();
+    } else {
+      $("examSetup").hidden = false;
+      $("examRoster").hidden = true;
+      $("examSummary").hidden = true;
+      populateExamSetup();
+    }
+  }
+
+  function populateExamSetup() {
+    const hasStudents = state.classes.some((c) => c.students.length);
+    $("examNoClass").hidden = hasStudents;
+    $("startExamBtn").disabled = !hasStudents;
+    $("examClass").innerHTML = state.classes.map((c) =>
+      `<option value="${c.id}">${escapeHtml(c.name)} (${c.students.length})</option>`).join("");
+    const order = []; const byTheme = new Map();
+    TASKS.forEach((t) => { if (!byTheme.has(t.theme)) { byTheme.set(t.theme, []); order.push(t.theme); } byTheme.get(t.theme).push(t); });
+    $("examTask").innerHTML = order.map((th) =>
+      `<optgroup label="${escapeHtml(th)}">` +
+      byTheme.get(th).map((t) => `<option value="${t.id}">${escapeHtml(t.title)}</option>`).join("") +
+      `</optgroup>`).join("");
+  }
+
+  function startExam() {
+    const cls = state.classes.find((c) => c.id === $("examClass").value);
+    if (!cls || !cls.students.length) { toast("Seçili sınıfta öğrenci yok."); return; }
+    const task = TASKS.find((t) => t.id === $("examTask").value) || TASKS[0];
+    state.exam = { classId: cls.id, className: cls.name, task: task, whisper: $("examWhisper").checked, results: {} };
+    renderExamView();
+  }
+
+  function renderExamRoster() {
+    const cls = state.classes.find((c) => c.id === state.exam.classId);
+    if (!cls) { state.exam = null; renderExamView(); return; }
+    $("examRosterClass").textContent = cls.name;
+    $("examRosterTask").textContent = `${state.exam.task.title} — ${state.exam.task.theme}`;
+    const done = Object.keys(state.exam.results).length, total = cls.students.length;
+    $("examProgressText").textContent = `${done}/${total} değerlendirildi`;
+    $("examProgressBar").style.width = (total ? done / total * 100 : 0) + "%";
+    $("examStudentList").innerHTML = cls.students.map((s, i) => {
+      const rec = state.exam.results[s.id];
+      const status = rec
+        ? `<span class="status-chip status-done">Tamamlandı</span>`
+        : `<span class="status-chip status-pending">Bekliyor</span>`;
+      const btn = `<button class="btn btn-ghost btn-sm" data-id="${s.id}">${rec ? "Tekrar" : "Değerlendir"}</button>`;
+      return `<tr><td>${i + 1}</td><td>${escapeHtml(s.name)}</td><td>${status}</td><td>${rec ? "<strong>" + rec.total + "</strong>" : "—"}</td><td style="text-align:right">${btn}</td></tr>`;
+    }).join("");
+    $("examStudentList").querySelectorAll("button[data-id]").forEach((b) =>
+      b.addEventListener("click", () => evaluateExamStudent(b.dataset.id)));
+  }
+
+  function evaluateExamStudent(studentId) {
+    const cls = state.classes.find((c) => c.id === state.exam.classId);
+    const student = cls && cls.students.find((s) => s.id === studentId);
+    if (!student) return;
+    state.mode = "exam";
+    state.examStudentId = studentId;
+    state.task = state.exam.task;
+    state.useWhisper = !!state.exam.whisper;
+    $("studentName").value = student.name;
+    $("studentClass").value = cls.name;
+    goToRecord(); // mevcut kayıt/değerlendirme akışını yeniden kullan
+  }
+
+  function renderExamSummary() {
+    const cls = state.classes.find((c) => c.id === state.exam.classId);
+    $("examSummaryClass").textContent = cls.name;
+    $("examSummaryTask").textContent = `${state.exam.task.title} — ${state.exam.task.theme}`;
+    let sum = 0, n = 0;
+    $("examSummaryBody").innerHTML = cls.students.map((s, i) => {
+      const rec = state.exam.results[s.id];
+      const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : "—"; };
+      if (rec) { sum += rec.total; n++; }
+      return `<tr><td>${i + 1}</td><td>${escapeHtml(s.name)}</td>
+        <td>${cell("uyum")}</td><td>${cell("organizasyon")}</td><td>${cell("sunum")}</td><td>${cell("dil")}</td><td>${cell("yaraticilik")}</td>
+        <td><strong>${rec ? rec.total : "—"}</strong></td><td>${rec ? escapeHtml(rec.level) : "—"}</td></tr>`;
+    }).join("");
+    const avg = n ? Math.round(sum / n) : 0;
+    $("examAvg").textContent = avg;
+    $("examAvgRing").style.setProperty("--p", avg);
+  }
+
+  function exportExamCsv() {
+    const cls = state.classes.find((c) => c.id === state.exam.classId);
+    const csv = (s) => { s = String(s == null ? "" : s); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const lines = [["No", "Ogrenci", "Uyum", "Organizasyon", "Sunum", "Dil", "Yaraticilik", "Toplam", "Duzey"].join(";")];
+    cls.students.forEach((s, i) => {
+      const rec = state.exam.results[s.id];
+      const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : ""; };
+      lines.push([i + 1, csv(s.name), cell("uyum"), cell("organizasyon"), cell("sunum"), cell("dil"), cell("yaraticilik"), rec ? rec.total : "", rec ? csv(rec.level) : ""].join(";"));
+    });
+    const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sinav_${csv(cls.name).replace(/\s+/g, "_")}_${state.exam.task.id}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ============================================================ */
   /* ARAYÜZ YARDIMCILARI                                          */
   /* ============================================================ */
-  function showStep(name) {
-    Object.entries(steps).forEach(([k, el]) => (el.hidden = k !== name));
+  // Kayıt/sonuç akışı: sekmeleri ve tüm görünümleri gizle, yalnız akışı göster
+  function showFlow(step) {
+    $("tabs").hidden = true;
+    ["setupStep", "historySection", "view-exam", "view-classes"].forEach((id) => {
+      const e = $(id); if (e) e.hidden = true;
+    });
+    steps.record.hidden = step !== "record";
+    steps.result.hidden = step !== "result";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Üst sekmeler: single / exam / classes
+  function showView(view) {
+    state.view = view;
+    $("tabs").hidden = false;
+    steps.record.hidden = true;
+    steps.result.hidden = true;
+    $("setupStep").hidden = view !== "single";
+    $("view-exam").hidden = view !== "exam";
+    $("view-classes").hidden = view !== "classes";
+    $("historySection").hidden = !(view === "single" && state.history.length);
+    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === view));
+    if (view === "exam") renderExamView();
+    if (view === "classes") renderClasses();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -948,7 +1187,10 @@
   function bindEvents() {
     $("startBtn").addEventListener("click", startRecording);
     $("stopBtn").addEventListener("click", stopRecording);
-    $("backToSetupBtn").addEventListener("click", async () => { await stopRecording(); showStep("setup"); });
+    $("backToSetupBtn").addEventListener("click", async () => {
+      await stopRecording();
+      showView(state.mode === "exam" ? "exam" : "single");
+    });
     $("evaluateBtn").addEventListener("click", async () => {
       const btn = $("evaluateBtn");
       btn.disabled = true;
@@ -966,13 +1208,34 @@
       runEvaluation();
       btn.disabled = false;
     });
-    $("backToRecordBtn").addEventListener("click", () => showStep("record"));
+    $("backToRecordBtn").addEventListener("click", () => showFlow("record"));
     $("printBtn").addEventListener("click", () => { buildPrintReport(); window.print(); });
     $("downloadAudioBtn").addEventListener("click", downloadAudio);
     $("exportBtn").addEventListener("click", exportJson);
     $("finishBtn").addEventListener("click", finishAssessment);
-    $("newAssessmentBtn").addEventListener("click", () => { resetForNew(); showStep("setup"); });
+    $("newAssessmentBtn").addEventListener("click", () => { state.mode = "single"; resetForNew(); showView("single"); });
     $("transcript").addEventListener("input", (e) => e.target.classList.remove("invalid"));
+
+    // Sekmeler
+    document.querySelectorAll(".tab").forEach((t) => {
+      t.addEventListener("click", () => { state.mode = t.dataset.view === "exam" ? state.mode : "single"; showView(t.dataset.view); });
+    });
+
+    // Sınıf yönetimi
+    $("addClassBtn").addEventListener("click", addClass);
+    $("newClassName").addEventListener("keydown", (e) => { if (e.key === "Enter") addClass(); });
+    $("deleteClassBtn").addEventListener("click", deleteCurrentClass);
+    $("addStudentBtn").addEventListener("click", addStudentSingle);
+    $("newStudentName").addEventListener("keydown", (e) => { if (e.key === "Enter") addStudentSingle(); });
+    $("bulkAddBtn").addEventListener("click", bulkAddStudents);
+
+    // Sınav modu
+    $("startExamBtn").addEventListener("click", startExam);
+    $("examBackBtn").addEventListener("click", () => { state.exam = null; renderExamView(); });
+    $("examSummaryBtn").addEventListener("click", () => { renderExamSummary(); $("examRoster").hidden = true; $("examSummary").hidden = false; });
+    $("examSummaryBackBtn").addEventListener("click", () => { $("examSummary").hidden = true; $("examRoster").hidden = false; });
+    $("examCsvBtn").addEventListener("click", exportExamCsv);
+    $("examPrintBtn").addEventListener("click", () => window.print());
   }
 
   /* ----------------------------- başlat ----------------------------- */

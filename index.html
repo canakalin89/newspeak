@@ -25,6 +25,12 @@
 
   <main class="container">
 
+    <nav class="tabs" id="tabs">
+      <button type="button" class="tab is-active" data-view="single">Tekli Değerlendirme</button>
+      <button type="button" class="tab" data-view="exam">Sınav Modu</button>
+      <button type="button" class="tab" data-view="classes">Sınıflar</button>
+    </nav>
+
     <!-- 1. ADIM: Hazırlık -->
     <section id="setupStep" class="card step">
       <h2 class="step-title"><span class="step-no">1</span> Öğrenci ve Görev Bilgileri</h2>
@@ -173,6 +179,115 @@
         </thead>
         <tbody id="historyBody"></tbody>
       </table>
+    </section>
+
+    <!-- SINAV MODU -->
+    <section id="view-exam" class="card" hidden>
+      <h2 class="step-title">Sınav Modu</h2>
+
+      <div id="examSetup">
+        <p class="muted-note">Bir sınıf ve konuşma görevi seçin; tüm öğrencileri aynı görevle sırayla değerlendirin.</p>
+        <div id="examNoClass" class="notice" hidden>Önce <strong>Sınıflar</strong> sekmesinden bir sınıf ve öğrenci ekleyin.</div>
+        <label class="field">
+          <span>Sınıf</span>
+          <select id="examClass"></select>
+        </label>
+        <label class="field">
+          <span>Konuşma Görevi</span>
+          <select id="examTask"></select>
+        </label>
+        <label class="check-field">
+          <input type="checkbox" id="examWhisper" />
+          <span><strong>Daha doğru çözümleme (Whisper · ücretsiz)</strong> — sınav boyunca daha isabetli yazıya dökme (Chrome/Edge).</span>
+        </label>
+        <button id="startExamBtn" class="btn btn-primary" type="button">Sınavı Başlat →</button>
+      </div>
+
+      <div id="examRoster" hidden>
+        <div class="exam-head">
+          <div>
+            <strong id="examRosterClass"></strong>
+            <p id="examRosterTask" class="muted-note"></p>
+          </div>
+          <div class="exam-progress">
+            <span id="examProgressText" class="ws-text"></span>
+            <div class="meter"><div id="examProgressBar" class="meter-fill band-3" style="width:0%"></div></div>
+          </div>
+        </div>
+        <table class="history-table">
+          <thead><tr><th>No</th><th>Öğrenci</th><th>Durum</th><th>Puan</th><th></th></tr></thead>
+          <tbody id="examStudentList"></tbody>
+        </table>
+        <div class="row-between">
+          <button id="examBackBtn" class="btn btn-ghost" type="button">← Sınav Ayarı</button>
+          <button id="examSummaryBtn" class="btn btn-primary" type="button">Özet & Dışa Aktar →</button>
+        </div>
+      </div>
+
+      <div id="examSummary" hidden>
+        <div class="result-head">
+          <div>
+            <strong id="examSummaryClass"></strong>
+            <p id="examSummaryTask" class="muted-note"></p>
+          </div>
+          <div class="score-ring" id="examAvgRing" style="--p:0">
+            <span id="examAvg">0</span><small>/ 100</small><em>sınıf ort.</em>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="history-table" id="examSummaryTable">
+            <thead><tr><th>No</th><th>Öğrenci</th><th>Uyum</th><th>Org.</th><th>Sunum</th><th>Dil</th><th>Yar.</th><th>Toplam</th><th>Düzey</th></tr></thead>
+            <tbody id="examSummaryBody"></tbody>
+          </table>
+        </div>
+        <div class="row-between">
+          <button id="examSummaryBackBtn" class="btn btn-ghost" type="button">← Listeye Dön</button>
+          <div class="result-actions">
+            <button id="examCsvBtn" class="btn btn-ghost" type="button">CSV İndir</button>
+            <button id="examPrintBtn" class="btn btn-ghost" type="button">Yazdır / PDF</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SINIF YÖNETİMİ -->
+    <section id="view-classes" class="card" hidden>
+      <h2 class="step-title">Sınıf Yönetimi</h2>
+
+      <div class="add-row">
+        <input id="newClassName" type="text" placeholder="Yeni sınıf adı — örn: 9-A" autocomplete="off" />
+        <button id="addClassBtn" class="btn btn-primary" type="button">Sınıf Ekle</button>
+      </div>
+
+      <div id="classList" class="class-list"></div>
+      <p id="noClassesHint" class="muted-note" hidden>Henüz sınıf yok. Yukarıdan bir sınıf ekleyin.</p>
+
+      <div id="classDetail" class="class-detail" hidden>
+        <div class="row-between">
+          <h3 id="classDetailName"></h3>
+          <button id="deleteClassBtn" class="btn btn-ghost" type="button">Sınıfı Sil</button>
+        </div>
+        <p id="classStudentCount" class="muted-note"></p>
+
+        <table class="history-table">
+          <thead><tr><th>No</th><th>Öğrenci</th><th></th></tr></thead>
+          <tbody id="studentList"></tbody>
+        </table>
+
+        <div class="add-row">
+          <input id="newStudentName" type="text" placeholder="Tek öğrenci ekle — Ad Soyad" autocomplete="off" />
+          <button id="addStudentBtn" class="btn btn-ghost" type="button">Ekle</button>
+        </div>
+
+        <label class="field">
+          <span>Toplu öğrenci ekle (her satıra bir isim)</span>
+          <textarea id="bulkStudents" rows="6" placeholder="Ayşe Yılmaz
+Mehmet Demir
+Zeynep Kaya
+..."></textarea>
+        </label>
+        <button id="bulkAddBtn" class="btn btn-primary" type="button">Listeyi Ekle</button>
+      </div>
     </section>
 
   </main>
