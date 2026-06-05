@@ -191,29 +191,34 @@
     <section id="view-exam" class="card" hidden>
       <h2 class="step-title">Sınav Modu</h2>
 
-      <div id="examSetup">
-        <p class="muted-note">Bir sınıf ve konuşma görevi seçin; tüm öğrencileri aynı görevle sırayla değerlendirin.</p>
-        <div id="examNoClass" class="notice" hidden>Önce <strong>Sınıflar</strong> sekmesinden bir sınıf ve öğrenci ekleyin.</div>
+      <p class="muted-note">Sınıf ve öğrenci seç, öğrencinin konusunu belirle ve değerlendir. Konu öğrenci bazlıdır.</p>
+      <div id="examNoClass" class="notice" hidden>Önce <strong>Sınıflar</strong> sekmesinden bir sınıf ve öğrenci ekleyin.</div>
+
+      <div id="examPicker" class="exam-picker">
         <label class="field">
           <span>Sınıf</span>
           <select id="examClass"></select>
         </label>
         <label class="field">
-          <span>Varsayılan konu <em class="optional">(her öğrenci için listede ayrıca değiştirilebilir)</em></span>
-          <select id="examTask"></select>
+          <span>Öğrenci</span>
+          <select id="examStudent"></select>
+        </label>
+        <label class="field">
+          <span>Konu <em class="optional">(bu öğrenci için)</em></span>
+          <select id="examTaskSel"></select>
         </label>
         <label class="check-field">
           <input type="checkbox" id="examWhisper" />
-          <span><strong>Daha doğru çözümleme (Whisper · ücretsiz)</strong> — sınav boyunca daha isabetli yazıya dökme (Chrome/Edge).</span>
+          <span><strong>Daha doğru çözümleme (Whisper · ücretsiz)</strong> — daha isabetli yazıya dökme (Chrome/Edge).</span>
         </label>
-        <button id="startExamBtn" class="btn btn-primary" type="button">Sınavı Başlat →</button>
+        <button id="examEvaluateBtn" class="btn btn-primary" type="button">Seçili Öğrenciyi Değerlendir →</button>
       </div>
 
-      <div id="examRoster" hidden>
+      <div id="examRosterWrap">
         <div class="exam-head">
           <div>
             <strong id="examRosterClass"></strong>
-            <p id="examRosterTask" class="muted-note"></p>
+            <p class="muted-note">Sınıf ilerlemesi — satıra tıklayarak öğrenci seçebilirsin</p>
           </div>
           <div class="exam-progress">
             <span id="examProgressText" class="ws-text"></span>
@@ -222,13 +227,13 @@
         </div>
         <div class="table-scroll">
           <table class="history-table">
-            <thead><tr><th>No</th><th>Öğrenci</th><th>Konu</th><th>Durum</th><th>Puan</th><th></th></tr></thead>
+            <thead><tr><th>No</th><th>Öğrenci</th><th>Konu</th><th>Durum</th><th>Puan</th></tr></thead>
             <tbody id="examStudentList"></tbody>
           </table>
         </div>
         <div class="row-between">
-          <button id="examBackBtn" class="btn btn-ghost" type="button">← Sınav Ayarı</button>
-          <button id="examSummaryBtn" class="btn btn-primary" type="button">Özet & Dışa Aktar →</button>
+          <span></span>
+          <button id="examSummaryBtn" class="btn btn-ghost" type="button">Sınıf Özeti &amp; Dışa Aktar →</button>
         </div>
       </div>
 

@@ -102,6 +102,12 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 .link-danger { background: none; border: none; color: var(--danger); cursor: pointer; font: inherit; font-size: .82rem; }
 
 /* Sınav modu */
+.exam-picker { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.exam-picker .field { flex: 1 1 200px; margin-bottom: 0; }
+.exam-picker .check-field { flex: 1 1 100%; margin-bottom: 0; }
+.exam-picker .btn-primary { flex: 0 0 auto; }
+#examStudentList tr[data-id] { cursor: pointer; }
+#examStudentList tr.is-sel { background: var(--accent-soft); }
 .exam-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
 .exam-head strong { font-family: var(--serif); font-size: 1.05rem; }
 .exam-progress { min-width: 200px; }
@@ -324,6 +330,9 @@ textarea { resize: vertical; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+@media (max-width: 640px) {
+  .exam-picker { grid-template-columns: 1fr; }
+}
 @media (max-width: 560px) {
   .grid-2 { grid-template-columns: 1fr; }
   .app-header { padding: 16px 18px; }

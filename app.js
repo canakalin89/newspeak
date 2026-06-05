@@ -39,7 +39,9 @@
     view: "single",      // aktif sekme
     classes: loadClasses(),
     currentClassId: null,
-    exam: null           // { classId, className, task, whisper, results: {studentId: rec} }
+    examClassId: null,   // sınav modunda seçili sınıf
+    examStudentId: null, // sınav modunda seçili öğrenci
+    examResults: {}      // { classId: { studentId: rec } } — oturum içi ilerleme
   };
 
   /* ============================================================ */
@@ -889,9 +891,9 @@
     const rec = buildRecord();
     state.history.unshift(rec);
     saveHistory(state.history);
-    // Sınav modu: sonucu sınava işle ve listeye dön
-    if (state.mode === "exam" && state.exam && state.examStudentId) {
-      state.exam.results[state.examStudentId] = rec;
+    // Sınav modu: sonucu sınava işle, sonraki bekleyen öğrenciye geç, listeye dön
+    if (state.mode === "exam" && state.examStudentId) {
+      recordExamResult(rec);
       toast("Öğrenci değerlendirmesi kaydedildi.");
       resetForNew();
       showView("exam");
@@ -1064,86 +1066,106 @@
       `</optgroup>`).join("");
   }
 
-  function renderExamView() {
-    if (state.exam) {
-      $("examSetup").hidden = true;
-      $("examSummary").hidden = true;
-      $("examRoster").hidden = false;
-      renderExamRoster();
-    } else {
-      $("examSetup").hidden = false;
-      $("examRoster").hidden = true;
-      $("examSummary").hidden = true;
-      populateExamSetup();
-    }
+  // Sınav durumu: seçili sınıf/öğrenci + sınıf bazında sonuçlar
+  function examClass() { return state.classes.find((c) => c.id === state.examClassId) || null; }
+  function examResultsMap() {
+    if (!state.examResults[state.examClassId]) state.examResults[state.examClassId] = {};
+    return state.examResults[state.examClassId];
   }
+  function currentExamStudent() {
+    const cls = examClass();
+    return cls ? (cls.students.find((s) => s.id === state.examStudentId) || null) : null;
+  }
+  function studentTaskId(s) { return (s && s.taskId) || (TASKS[0] && TASKS[0].id); }
 
-  function populateExamSetup() {
+  function renderExamView() {
     const hasStudents = state.classes.some((c) => c.students.length);
     $("examNoClass").hidden = hasStudents;
-    $("startExamBtn").disabled = !hasStudents;
+    $("examPicker").hidden = !hasStudents;
+    $("examRosterWrap").hidden = !hasStudents;
+    $("examSummary").hidden = true;
+    if (!hasStudents) return;
+    // Geçerli sınıf seçili değilse öğrencisi olan ilk sınıfı seç
+    if (!examClass() || !examClass().students.length) {
+      const c = state.classes.find((x) => x.students.length) || state.classes[0];
+      state.examClassId = c.id;
+      state.examStudentId = null;
+    }
     $("examClass").innerHTML = state.classes.map((c) =>
-      `<option value="${c.id}">${escapeHtml(c.name)} (${c.students.length})</option>`).join("");
-    $("examTask").innerHTML = taskOptionsHtml(TASKS[0].id);
+      `<option value="${c.id}"${c.id === state.examClassId ? " selected" : ""}>${escapeHtml(c.name)} (${c.students.length})</option>`).join("");
+    populateExamStudents();
+    renderExamRoster();
   }
 
-  function startExam() {
-    const cls = state.classes.find((c) => c.id === $("examClass").value);
-    if (!cls || !cls.students.length) { toast("Seçili sınıfta öğrenci yok."); return; }
-    const defaultTaskId = $("examTask").value || TASKS[0].id;
-    // Her öğrenciye varsayılan konuyu ata (listede tek tek değiştirilebilir)
-    const tasks = {};
-    cls.students.forEach((s) => { tasks[s.id] = defaultTaskId; });
-    state.exam = { classId: cls.id, className: cls.name, defaultTaskId: defaultTaskId, tasks: tasks, whisper: $("examWhisper").checked, results: {} };
-    renderExamView();
+  function populateExamStudents() {
+    const cls = examClass(); if (!cls) return;
+    if (!cls.students.some((s) => s.id === state.examStudentId)) {
+      state.examStudentId = cls.students[0] ? cls.students[0].id : null;
+    }
+    $("examStudent").innerHTML = cls.students.map((s, i) =>
+      `<option value="${s.id}"${s.id === state.examStudentId ? " selected" : ""}>${escapeHtml(studentNo(s, i))} · ${escapeHtml(s.name)}</option>`).join("");
+    syncExamTopic();
+  }
+
+  function syncExamTopic() {
+    $("examTaskSel").innerHTML = taskOptionsHtml(studentTaskId(currentExamStudent()));
   }
 
   function renderExamRoster() {
-    const cls = state.classes.find((c) => c.id === state.exam.classId);
-    if (!cls) { state.exam = null; renderExamView(); return; }
+    const cls = examClass(); if (!cls) return;
     $("examRosterClass").textContent = cls.name;
-    $("examRosterTask").textContent = "Her öğrenci için konuyu seçip değerlendirin.";
-    const done = Object.keys(state.exam.results).length, total = cls.students.length;
+    const results = examResultsMap();
+    const done = cls.students.filter((s) => results[s.id]).length, total = cls.students.length;
     $("examProgressText").textContent = `${done}/${total} değerlendirildi`;
     $("examProgressBar").style.width = (total ? done / total * 100 : 0) + "%";
     $("examStudentList").innerHTML = cls.students.map((s, i) => {
-      const rec = state.exam.results[s.id];
+      const rec = results[s.id];
+      const task = TASKS.find((t) => t.id === studentTaskId(s));
       const status = rec
         ? `<span class="status-chip status-done">Tamamlandı</span>`
         : `<span class="status-chip status-pending">Bekliyor</span>`;
-      const sel = `<select class="exam-task-select" data-id="${s.id}">${taskOptionsHtml(state.exam.tasks[s.id] || state.exam.defaultTaskId)}</select>`;
-      const btn = `<button class="btn btn-ghost btn-sm" data-id="${s.id}">${rec ? "Tekrar" : "Değerlendir"}</button>`;
-      return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td><td>${sel}</td><td>${status}</td><td>${rec ? "<strong>" + rec.total + "</strong>" : "—"}</td><td style="text-align:right">${btn}</td></tr>`;
+      const selCls = s.id === state.examStudentId ? ' class="is-sel"' : "";
+      return `<tr data-id="${s.id}"${selCls}><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(task ? task.title : "—")}</td><td>${status}</td><td>${rec ? "<strong>" + rec.total + "</strong>/100" : "—"}</td></tr>`;
     }).join("");
-    $("examStudentList").querySelectorAll("select[data-id]").forEach((sel) =>
-      sel.addEventListener("change", () => { state.exam.tasks[sel.dataset.id] = sel.value; }));
-    $("examStudentList").querySelectorAll("button[data-id]").forEach((b) =>
-      b.addEventListener("click", () => evaluateExamStudent(b.dataset.id)));
+    $("examStudentList").querySelectorAll("tr[data-id]").forEach((tr) =>
+      tr.addEventListener("click", () => { state.examStudentId = tr.dataset.id; populateExamStudents(); renderExamRoster(); }));
   }
 
-  function evaluateExamStudent(studentId) {
-    const cls = state.classes.find((c) => c.id === state.exam.classId);
-    const student = cls && cls.students.find((s) => s.id === studentId);
-    if (!student) return;
+  function examEvaluate() {
+    const cls = examClass(), s = currentExamStudent();
+    if (!cls || !s) { toast("Önce sınıf ve öğrenci seçin."); return; }
+    s.taskId = $("examTaskSel").value;            // bu öğrencinin konusunu kaydet
+    saveClasses();
     state.mode = "exam";
-    state.examStudentId = studentId;
-    const taskId = state.exam.tasks[studentId] || state.exam.defaultTaskId;
-    state.task = TASKS.find((t) => t.id === taskId) || TASKS[0];
-    state.useWhisper = !!state.exam.whisper;
-    $("studentName").value = student.name;
+    state.examStudentId = s.id;
+    state.task = TASKS.find((t) => t.id === s.taskId) || TASKS[0];
+    state.useWhisper = $("examWhisper").checked;
+    $("studentName").value = s.name;
     $("studentClass").value = cls.name;
     goToRecord(); // mevcut kayıt/değerlendirme akışını yeniden kullan
   }
 
+  // Değerlendirme bitince sınava işle ve bir sonraki bekleyen öğrenciye geç
+  function recordExamResult(rec) {
+    examResultsMap()[state.examStudentId] = rec;
+    const cls = examClass();
+    if (cls) {
+      const results = examResultsMap();
+      const next = cls.students.find((s) => !results[s.id]);
+      if (next) state.examStudentId = next.id;
+    }
+  }
+
   function renderExamSummary() {
-    const cls = state.classes.find((c) => c.id === state.exam.classId);
+    const cls = examClass();
     $("examSummaryClass").textContent = cls.name;
     $("examSummaryTask").textContent = "Öğrenci bazlı konular — sınıf özeti";
+    const results = examResultsMap();
     let sum = 0, n = 0;
     $("examSummaryBody").innerHTML = cls.students.map((s, i) => {
-      const rec = state.exam.results[s.id];
+      const rec = results[s.id];
       const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : "—"; };
-      const task = rec ? rec.task : TASKS.find((t) => t.id === (state.exam.tasks[s.id] || state.exam.defaultTaskId));
+      const task = rec ? rec.task : TASKS.find((t) => t.id === studentTaskId(s));
       if (rec) { sum += rec.total; n++; }
       return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(task ? task.title : "—")}</td>
         <td>${cell("uyum")}</td><td>${cell("organizasyon")}</td><td>${cell("sunum")}</td><td>${cell("dil")}</td><td>${cell("yaraticilik")}</td>
@@ -1155,13 +1177,14 @@
   }
 
   function exportExamCsv() {
-    const cls = state.classes.find((c) => c.id === state.exam.classId);
+    const cls = examClass();
+    const results = examResultsMap();
     const csv = (s) => { s = String(s == null ? "" : s); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const lines = [["No", "Ogrenci", "Konu", "Uyum", "Organizasyon", "Sunum", "Dil", "Yaraticilik", "Toplam", "Duzey"].join(";")];
     cls.students.forEach((s, i) => {
-      const rec = state.exam.results[s.id];
+      const rec = results[s.id];
       const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : ""; };
-      const task = rec ? rec.task : TASKS.find((t) => t.id === (state.exam.tasks[s.id] || state.exam.defaultTaskId));
+      const task = rec ? rec.task : TASKS.find((t) => t.id === studentTaskId(s));
       lines.push([csv(studentNo(s, i)), csv(s.name), csv(task ? task.title : ""), cell("uyum"), cell("organizasyon"), cell("sunum"), cell("dil"), cell("yaraticilik"), rec ? rec.total : "", rec ? csv(rec.level) : ""].join(";"));
     });
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -1281,10 +1304,12 @@
     $("bulkAddBtn").addEventListener("click", bulkAddStudents);
 
     // Sınav modu
-    $("startExamBtn").addEventListener("click", startExam);
-    $("examBackBtn").addEventListener("click", () => { state.exam = null; renderExamView(); });
-    $("examSummaryBtn").addEventListener("click", () => { renderExamSummary(); $("examRoster").hidden = true; $("examSummary").hidden = false; });
-    $("examSummaryBackBtn").addEventListener("click", () => { $("examSummary").hidden = true; $("examRoster").hidden = false; });
+    $("examClass").addEventListener("change", () => { state.examClassId = $("examClass").value; state.examStudentId = null; populateExamStudents(); renderExamRoster(); });
+    $("examStudent").addEventListener("change", () => { state.examStudentId = $("examStudent").value; syncExamTopic(); renderExamRoster(); });
+    $("examTaskSel").addEventListener("change", () => { const s = currentExamStudent(); if (s) { s.taskId = $("examTaskSel").value; saveClasses(); renderExamRoster(); } });
+    $("examEvaluateBtn").addEventListener("click", examEvaluate);
+    $("examSummaryBtn").addEventListener("click", () => { renderExamSummary(); $("examPicker").hidden = true; $("examRosterWrap").hidden = true; $("examSummary").hidden = false; });
+    $("examSummaryBackBtn").addEventListener("click", () => { $("examSummary").hidden = true; $("examPicker").hidden = false; $("examRosterWrap").hidden = false; });
     $("examCsvBtn").addEventListener("click", exportExamCsv);
     $("examPrintBtn").addEventListener("click", () => window.print());
   }
