@@ -254,6 +254,7 @@
   const WHISPER_READY_FLAG = "tymm_whisper_ready"; // model daha önce indirildi mi
   let _whisperPipe = null, _whisperLoading = null;
   let _whisperWorker = null, _whisperJob = null;
+  let _whisperModelReady = false; // model belleğe yüklendi mi (tahmini ilerleme için)
   const _wFiles = {}; // dosya bazında indirme ilerlemesi
 
   function whisperWasDownloaded() {
@@ -339,9 +340,9 @@
       const d = e.data || {};
       if (d.kind === "progress") onWhisperProgress(d.p);
       else if (d.kind === "ready") {
+        _whisperModelReady = true;
         try { localStorage.setItem(WHISPER_READY_FLAG, "1"); } catch (_) {}
         setWhisperUI(100, "hazır ✓", "ready");
-        if (_loadingActive) setLoading("Ses çözümleniyor…");
       } else if (d.kind === "result") {
         if (_whisperJob) { _whisperJob.resolve((d.text || "").replace(/\s+/g, " ").trim()); _whisperJob = null; }
       } else if (d.kind === "error") {
@@ -389,6 +390,7 @@
           quantized: true, progress_callback: onWhisperProgress
         });
         _whisperPipe = pipe;
+        _whisperModelReady = true;
         try { localStorage.setItem(WHISPER_READY_FLAG, "1"); } catch (_) {}
         setWhisperUI(100, "hazır ✓", "ready");
         return pipe;
@@ -419,16 +421,44 @@
     _whisperJob = null;
     _whisperPipe = null;
     _whisperLoading = null;
+    _whisperModelReady = false;
     for (const k in _wFiles) delete _wFiles[k];
+  }
+
+  // Çözümleme için tahmini ilerleme: ses süresine göre asimptotik dolan çubuk + kalan süre.
+  // (Whisper inference gerçek yüzde yayınlamaz; bu yüzden tahmin gösterilir.)
+  function startTranscribeProgress(estSec) {
+    let readyAt = _whisperModelReady ? performance.now() : null;
+    const tick = () => {
+      if (!_loadingActive) return;
+      if (!_whisperModelReady) { readyAt = null; return; } // model hazırlık fazı (indirme % gösterilir)
+      if (readyAt == null) readyAt = performance.now();
+      const elapsed = (performance.now() - readyAt) / 1000;
+      const pct = Math.min(96, (1 - Math.exp(-elapsed / estSec)) * 100); // erken "bitti" demez
+      const remaining = Math.round(estSec - elapsed);
+      const txt = remaining > 1 ? `Ses çözümleniyor… (~${remaining} sn)` : "Ses çözümleniyor… (neredeyse bitti)";
+      setLoading(txt, pct);
+    };
+    const id = setInterval(tick, 200);
+    tick();
+    return () => clearInterval(id);
   }
 
   // Otomatik (1 kez) + kullanıcı onaylı tekrar deneme; "Devam et" seçilirse null döner
   async function transcribeWithRetryUI(blob) {
+    // Çözümleme süresi tahmini: konuşma süresine bağlı (cihaz hızına göre yaklaşık)
+    const audioSec = (state.acoustic && state.acoustic.speechSec) || (state.elapsedMs / 1000) || 20;
+    const estSec = clamp(audioSec * 1.3 + 4, 6, 180);
     for (;;) {
+      setLoading(_whisperModelReady ? "Ses çözümleniyor…" : "Whisper modeli hazırlanıyor…");
+      const stopProgress = startTranscribeProgress(estSec);
       try {
-        setLoading(whisperWasDownloaded() ? "Ses çözümleniyor (Whisper)…" : "Whisper modeli hazırlanıyor…");
-        return await retry(() => transcribeWithWhisper(blob), 1, 1500);
+        const txt = await retry(() => transcribeWithWhisper(blob), 1, 1500);
+        stopProgress();
+        setLoading("Tamamlandı", 100);
+        return txt;
       } catch (e) {
+        stopProgress();
         const choice = await showLoadingError("Çözümleme başarısız oldu (internet veya model hatası). Tekrar deneyebilirsin.");
         if (choice === "retry") { resetWhisperWorker(); continue; }
         return null; // tarayıcı metniyle devam
