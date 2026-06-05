@@ -20,9 +20,9 @@
   uyum, organizasyon, dil ve yaratıcılık bu metinden ölçülür. Mikrofon yoksa metin elle girilebilir.
 - 🎯 **İsteğe bağlı Whisper modu (ücretsiz)** — Ayar ekranındaki seçenek işaretlenirse konuşma,
   tarayıcıda çalışan açık kaynak **Whisper** (`transformers.js`, ONNX-WASM) ile **çok daha doğru**
-  yazıya dökülür — aksanlı/zayıf İngilizcede bile. Hesap/ücret yok; ilk kullanımda model indirilir
-  (internet gerekir), sonrası tarayıcıda çevrimdışı çalışır. Ağ/destek yoksa otomatik olarak Web
-  Speech metnine düşer.
+  yazıya dökülür — aksanlı/zayıf İngilizcede bile. Hesap/ücret yok; model **yalnızca bir kez**
+  indirilir (tarayıcı önbelleğinde saklanır), sonraki açılışlarda önbellekten yüklenir ve
+  çevrimdışı çalışır. Ağ/destek yoksa otomatik olarak Web Speech metnine düşer.
 - 📊 **5 ölçütlü değerlendirme** — Her ölçüt %20 ağırlıklıdır (toplam 100); 0–100 ham
   puan ve 1–4 başarım düzeyi olarak gösterilir:
   1. **Uyum** (Relevance) — göreve/konuya uygunluk

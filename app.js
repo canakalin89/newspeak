@@ -249,8 +249,13 @@
   /* (OpenAI Whisper, transformers.js / ONNX-WASM ile)            */
   /* ============================================================ */
   const WHISPER_MODEL = "Xenova/whisper-base.en"; // İngilizce, dengeli boyut/doğruluk
+  const WHISPER_READY_FLAG = "tymm_whisper_ready"; // model daha önce indirildi mi
   let _whisperPipe = null, _whisperLoading = null;
   const _wFiles = {}; // dosya bazında indirme ilerlemesi
+
+  function whisperWasDownloaded() {
+    try { return localStorage.getItem(WHISPER_READY_FLAG) === "1"; } catch (_) { return false; }
+  }
 
   function setWhisperUI(pct, text, cls) {
     const box = $("whisperStatus");
@@ -265,9 +270,11 @@
   }
 
   function preloadWhisper() {
-    setWhisperUI(0, "hazırlanıyor…");
+    // Model bir kez indirilir; sonraki açılışlarda tarayıcı önbelleğinden gelir.
+    const cached = whisperWasDownloaded();
+    setWhisperUI(cached ? 100 : 0, cached ? "önbellekten yükleniyor…" : "ilk kez indiriliyor (tek seferlik)…");
     getWhisper()
-      .then(() => setWhisperUI(100, "hazır ✓", "ready"))
+      .then(() => { try { localStorage.setItem(WHISPER_READY_FLAG, "1"); } catch (_) {} setWhisperUI(100, "hazır ✓", "ready"); })
       .catch(() => setWhisperUI(100, "indirilemedi — tarayıcı tanıma kullanılacak", "error"));
   }
 
@@ -292,15 +299,19 @@
       _whisperLoading = (async () => {
         const mod = await importTransformers();
         mod.env.allowLocalModels = false;            // modeli Hugging Face CDN'inden al
+        mod.env.useBrowserCache = true;              // bir kez indir, tarayıcı önbelleğinde sakla
         const pipe = await mod.pipeline("automatic-speech-recognition", WHISPER_MODEL, {
           quantized: true,
           progress_callback: (p) => {
             if (!p || !p.file) return;
-            if (p.total) _wFiles[p.file] = { loaded: p.loaded || 0, total: p.total };
-            let L = 0, T = 0;
-            for (const k in _wFiles) { L += _wFiles[k].loaded; T += _wFiles[k].total; }
-            const pct = T ? (L / T) * 100 : 0;
-            if (pct < 100) setWhisperUI(pct, `indiriliyor… %${Math.round(pct)}`);
+            // Yalnızca gerçek ağ indirmesinde yüzde göster (önbellekten gelişte byte akmaz)
+            if (p.status === "progress" && p.total) {
+              _wFiles[p.file] = { loaded: p.loaded || 0, total: p.total };
+              let L = 0, T = 0;
+              for (const k in _wFiles) { L += _wFiles[k].loaded; T += _wFiles[k].total; }
+              const pct = T ? (L / T) * 100 : 0;
+              if (pct < 100) setWhisperUI(pct, `indiriliyor… %${Math.round(pct)} (tek seferlik)`);
+            }
           }
         });
         _whisperPipe = pipe;
