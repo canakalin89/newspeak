@@ -57,7 +57,8 @@
 
 ## Kullanım
 
-Kurulum gerektirmez. `index.html` dosyasını bir tarayıcıda açmak yeterlidir.
+Kurulum gerektirmez. `index.html` **tanıtım (landing) sayfasıdır**; oradaki "Uygulamayı Aç"
+ile `app.html`'e geçilir. Doğrudan uygulamayı açmak için `app.html` kullanılabilir.
 
 > **Not:** Mikrofon erişimi ve konuşma tanıma için **Chrome** veya **Edge** önerilir
 > ve sayfanın `https://` ya da `localhost` üzerinden açılması gerekir. Yerelde test için:
@@ -104,8 +105,10 @@ tanımları için `rubric.js`, akustik analiz için `audio.js`.
 
 | Dosya | İçerik |
 |------|--------|
-| `index.html` | Arayüz ve adımlar |
-| `styles.css` | Görünüm |
+| `index.html` | Tanıtım (landing) sayfası |
+| `landing.css` | Tanıtım sayfası görünümü (responsive) |
+| `app.html` | Uygulama arayüzü ve adımlar |
+| `styles.css` | Uygulama görünümü (responsive) |
 | `rubric.js` | 5 ölçüt, başarım düzeyleri ve konuşma görevleri |
 | `audio.js` | Gerçek ses (akustik) analizi: duraklama, hız, tonlama, ses kaydı |
 | `app.js` | Konuşma tanıma, puanlama motoru, raporlama |

@@ -4,347 +4,180 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>İngilizce Konuşma Becerisi Değerlendirme · 9. Sınıf</title>
-  <meta name="description" content="Türkiye Yüzyılı Maarif Modeli'ne uygun, 9. sınıf öğrencileri için İngilizce konuşma becerisi değerlendirme uygulaması." />
+  <meta name="description" content="Türkiye Yüzyılı Maarif Modeli'ne uygun, 9. sınıf öğrencileri için gerçek ses analizli İngilizce konuşma becerisi değerlendirme uygulaması. Ücretsiz, çevrimdışı, kurulumsuz." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="landing.css" />
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true">İng</span>
-      <div class="brand-text">
-        <p class="eyebrow">9. Sınıf · İngilizce · Konuşma Becerisi</p>
-        <h1>Konuşma Becerisi Değerlendirme</h1>
-        <p class="subtitle">Türkiye Yüzyılı Maarif Modeli'ne uygun öğretmen değerlendirme aracı</p>
-      </div>
+
+  <header class="lp-nav">
+    <div class="lp-wrap lp-nav-inner">
+      <a class="lp-brand" href="#top">
+        <span class="lp-mark">İng</span>
+        <span class="lp-brand-text">Konuşma Değerlendirme</span>
+      </a>
+      <nav class="lp-nav-links">
+        <a href="#ozellikler">Özellikler</a>
+        <a href="#nasil">Nasıl çalışır</a>
+        <a href="#whisper">Whisper</a>
+        <a href="#kriterler">Kriterler</a>
+      </nav>
+      <a class="lp-btn lp-btn-primary" href="app.html">Uygulamayı Aç</a>
     </div>
-    <button id="newAssessmentBtn" class="btn btn-ghost" type="button" hidden>Yeni Değerlendirme</button>
   </header>
 
-  <main class="container">
+  <main id="top">
 
-    <nav class="tabs" id="tabs">
-      <button type="button" class="tab is-active" data-view="single">Tekli Değerlendirme</button>
-      <button type="button" class="tab" data-view="exam">Sınav Modu</button>
-      <button type="button" class="tab" data-view="classes">Sınıflar</button>
-      <button type="button" class="tab" data-view="reports">Raporlar</button>
-    </nav>
-
-    <!-- 1. ADIM: Hazırlık -->
-    <section id="setupStep" class="card step">
-      <h2 class="step-title"><span class="step-no">1</span> Öğrenci ve Görev Bilgileri</h2>
-
-      <p id="browserNote" class="browser-note">
-        <strong>Tarayıcı gereksinimi:</strong> En iyi sonuç için <strong>Google Chrome</strong> veya
-        <strong>Microsoft Edge</strong> kullanın ve mikrofon iznini verin. Konuşma tanıma, ses analizi
-        ve Whisper bu tarayıcılarda çalışır; Firefox/Safari'de bazı özellikler çalışmayabilir.
-      </p>
-
-      <div class="grid-2">
-        <label class="field">
-          <span>Öğrenci Adı Soyadı <em class="optional">(isteğe bağlı)</em></span>
-          <input type="text" id="studentName" placeholder="Örn: Ayşe Yılmaz" autocomplete="off" />
-        </label>
-        <label class="field">
-          <span>Sınıf / Şube <em class="optional">(isteğe bağlı)</em></span>
-          <input type="text" id="studentClass" placeholder="Örn: 9-A" autocomplete="off" />
-        </label>
-      </div>
-
-      <label class="field">
-        <span>Konuşma Görevi (Tema)</span>
-        <select id="taskSelect"></select>
-      </label>
-
-      <div id="taskCard" class="task-card">
-        <h3 id="taskTitle"></h3>
-        <p id="taskPrompt"></p>
-        <p class="task-meta">
-          <span id="taskLevel" class="chip"></span>
-          <span id="taskDuration" class="chip chip-soft"></span>
+    <!-- HERO -->
+    <section class="lp-hero">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow">Türkiye Yüzyılı Maarif Modeli · 9. Sınıf · İngilizce</p>
+        <h1>Konuşma becerisini <em>gerçek sesle</em> değerlendirin.</h1>
+        <p class="lp-lead">
+          Öğrenci konuşur, uygulama sesi analiz eder ve beş ölçüt üzerinden puanlar.
+          Sınıf yönetimi, sınav modu ve tek tıkla PDF rapor — hepsi tarayıcıda,
+          <strong>ücretsiz</strong> ve kurulumsuz.
         </p>
-        <details class="task-hints">
-          <summary>Öğrenciye yardımcı ifadeler / yönlendirmeler</summary>
-          <ul id="taskHints"></ul>
-        </details>
-      </div>
-
-      <p id="speechSupport" class="notice" hidden></p>
-
-      <label class="check-field">
-        <input type="checkbox" id="useWhisper" />
-        <span><strong>Daha doğru çözümleme (Whisper · ücretsiz)</strong> — konuşmayı tarayıcıda
-        çok daha doğru yazıya döker. İlk kullanımda model indirilir (internet gerekir); sonrası çevrimdışı.</span>
-      </label>
-
-      <button id="goToRecordBtn" class="btn btn-primary" type="button">Değerlendirmeye Başla →</button>
-    </section>
-
-    <!-- 2. ADIM: Kayıt -->
-    <section id="recordStep" class="card step" hidden>
-      <h2 class="step-title"><span class="step-no">2</span> Konuşma Kaydı</h2>
-
-      <div class="record-task">
-        <strong id="recordTaskTitle"></strong>
-        <p id="recordTaskPrompt"></p>
-      </div>
-
-      <div id="whisperStatus" class="whisper-status" hidden>
-        <div class="ws-row">
-          <span class="ws-label"><span class="ws-dot"></span>Whisper modeli</span>
-          <span id="whisperStatusText" class="ws-text">hazırlanıyor…</span>
+        <div class="lp-cta">
+          <a class="lp-btn lp-btn-primary lp-btn-lg" href="app.html">Hemen Başla →</a>
+          <a class="lp-btn lp-btn-ghost lp-btn-lg" href="#ozellikler">Özellikleri Gör</a>
         </div>
-        <div class="ws-bar"><div id="whisperBar" class="ws-bar-fill"></div></div>
-      </div>
+        <p class="lp-note">Chrome veya Edge önerilir · Mikrofon izni gerekir · Veriler yalnızca cihazınızda</p>
 
-      <div class="recorder">
-        <div class="recorder-top">
-          <div class="recorder-status">
-            <span id="recDot" class="rec-dot"></span>
-            <span id="recStatusText">Hazır</span>
-            <span id="recTimer" class="rec-timer">00:00</span>
+        <div class="lp-hero-card" aria-hidden="true">
+          <div class="lp-hc-head">
+            <div><span class="lp-hc-eyebrow">Değerlendirme Sonucu</span><strong>Ayşe Yılmaz · 9-A</strong></div>
+            <div class="lp-ring"><span>82</span><small>/100</small></div>
           </div>
-          <div class="recorder-controls">
-            <button id="startBtn" class="btn btn-primary" type="button"><span class="btn-rec-dot"></span>Kaydı Başlat</button>
-            <button id="stopBtn" class="btn btn-danger" type="button" disabled>Durdur</button>
-          </div>
-        </div>
-        <canvas id="visualizer" class="visualizer" aria-hidden="true"></canvas>
-      </div>
-
-      <label class="field">
-        <span>Konuşma Metni (otomatik yazıya dökülür — düzenlenebilir)</span>
-        <textarea id="transcript" rows="7" placeholder="Öğrenci konuştukça metin burada görünecek. Mikrofon yoksa metni elle de yazabilirsiniz."></textarea>
-      </label>
-
-      <div class="row-between">
-        <button id="backToSetupBtn" class="btn btn-ghost" type="button">← Geri</button>
-        <button id="evaluateBtn" class="btn btn-primary" type="button">Değerlendir →</button>
-      </div>
-    </section>
-
-    <!-- 3. ADIM: Sonuç -->
-    <section id="resultStep" class="card step" hidden>
-      <h2 class="step-title"><span class="step-no">3</span> Değerlendirme Sonucu</h2>
-
-      <div class="result-head">
-        <div>
-          <p class="result-student"><strong id="resStudent"></strong> · <span id="resClass"></span></p>
-          <p class="result-task" id="resTask"></p>
-        </div>
-        <div class="score-ring" id="scoreRing">
-          <span id="totalScore">0</span>
-          <small>/ 100</small>
-          <em id="totalBand"></em>
-        </div>
-      </div>
-
-      <div id="audioPanel" class="audio-panel" hidden>
-        <h3>Ses Kaydı &amp; Akustik Ölçümler</h3>
-        <p class="audio-hint">Öğrencinin sesini dinleyip puanları gerektiğinde elle düzeltebilirsiniz. Aşağıdaki ölçümler doğrudan ses dalgasından çıkarılır (metinden bağımsız).</p>
-        <audio id="audioPlayer" controls></audio>
-        <div id="acousticChips" class="acoustic-chips"></div>
-      </div>
-
-      <div id="criteriaList" class="criteria-list"></div>
-
-      <div class="feedback-box">
-        <h3>Geri Bildirim</h3>
-        <p id="overallFeedback" class="fb-summary"></p>
-        <div class="fb-cols">
-          <div class="fb-col fb-strong">
-            <h4>Güçlü Yönler</h4>
-            <ul id="fbStrengths"></ul>
-          </div>
-          <div class="fb-col fb-improve">
-            <h4>Geliştirilecek Alanlar &amp; Öneriler</h4>
-            <ul id="fbImprovements"></ul>
-          </div>
-        </div>
-      </div>
-
-      <label class="field">
-        <span>Öğretmen Notu (rapora eklenir)</span>
-        <textarea id="teacherNote" rows="3" placeholder="İsteğe bağlı: öğrenciye yönelik kişisel geri bildirim..."></textarea>
-      </label>
-
-      <div class="row-between">
-        <button id="backToRecordBtn" class="btn btn-ghost" type="button">← Kayda Dön</button>
-        <div class="result-actions">
-          <button id="printBtn" class="btn btn-ghost" type="button">Yazdır / PDF</button>
-          <button id="downloadAudioBtn" class="btn btn-ghost" type="button" hidden>Sesi İndir</button>
-          <button id="exportBtn" class="btn btn-ghost" type="button">JSON Kaydet</button>
-          <button id="finishBtn" class="btn btn-primary" type="button">Kaydet & Bitir</button>
+          <div class="lp-hc-row"><span>Uyum</span><i class="lp-bar"><b style="width:75%"></b></i><em>15</em></div>
+          <div class="lp-hc-row"><span>Organizasyon</span><i class="lp-bar"><b style="width:80%"></b></i><em>16</em></div>
+          <div class="lp-hc-row"><span>Sunum</span><i class="lp-bar"><b style="width:90%"></b></i><em>18</em></div>
+          <div class="lp-hc-row"><span>Dil</span><i class="lp-bar"><b style="width:70%"></b></i><em>14</em></div>
+          <div class="lp-hc-row"><span>Yaratıcılık</span><i class="lp-bar"><b style="width:95%"></b></i><em>19</em></div>
         </div>
       </div>
     </section>
 
-    <!-- RAPORLAR (kalıcı arşiv) -->
-    <section id="view-reports" class="card" hidden>
-      <h2 class="step-title">Raporlar</h2>
-      <p class="muted-note">Tüm kayıtlı değerlendirmeler burada saklanır; istediğin zaman <strong>PDF</strong> olarak yeniden alabilirsin.</p>
-      <div class="add-row">
-        <input id="reportSearch" type="text" placeholder="Öğrenci veya sınıf ara…" autocomplete="off" />
+    <!-- ÖZELLİKLER -->
+    <section id="ozellikler" class="lp-section">
+      <div class="lp-wrap">
+        <h2 class="lp-h2">Öne çıkan özellikler</h2>
+        <div class="lp-grid">
+          <article class="lp-feature">
+            <div class="lp-ico"><svg viewBox="0 0 24 24" class="ic"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg></div>
+            <h3>Gerçek ses analizi</h3>
+            <p>Konuşmanın kendisi (dalga formu) incelenir: akıcılık, duraklamalar, konuşma hızı, tonlama ve anlaşılırlık — metinden bağımsız.</p>
+          </article>
+          <article class="lp-feature">
+            <div class="lp-ico"><svg viewBox="0 0 24 24" class="ic"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z"/><path d="M18 14l.8 2 2 .8-2 .8L18 20l-.8-2.4-2-.8 2-.8z"/></svg></div>
+            <h3>Whisper ile doğru çözümleme</h3>
+            <p>Açık kaynak Whisper modeli tarayıcıda çalışır; aksanlı/zayıf İngilizcede bile çok daha doğru yazıya döker. Ücretsiz, hesapsız, bir kez indirilir.</p>
+          </article>
+          <article class="lp-feature">
+            <div class="lp-ico"><svg viewBox="0 0 24 24" class="ic"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="6" width="3" height="12"/><rect x="16" y="13" width="3" height="5"/></svg></div>
+            <h3>5 ölçüt · 0–20 puan</h3>
+            <p>Uyum, Organizasyon, Sunum, Dil ve Yaratıcılık; her biri 20 puan, toplam 100. Otomatik puan bir ön öneridir, öğretmen düzeltebilir.</p>
+          </article>
+          <article class="lp-feature">
+            <div class="lp-ico"><svg viewBox="0 0 24 24" class="ic"><path d="M3 9l9-4 9 4-9 4z"/><path d="M7 11v4c0 1.4 2.4 2.6 5 2.6s5-1.2 5-2.6v-4"/></svg></div>
+            <h3>Sınıf yönetimi & sınav modu</h3>
+            <p>Sınıf ve öğrenci ekleyin (toplu da), her öğrenciye konu atayın, tüm sınıfı sırayla değerlendirin; ilerlemeyi takip edin.</p>
+          </article>
+          <article class="lp-feature">
+            <div class="lp-ico"><svg viewBox="0 0 24 24" class="ic"><rect x="6" y="3" width="12" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>
+            <h3>Tek sayfalık PDF rapor</h3>
+            <p>Her kriter için puan, düzey ve öğrenciye somut öneriler. Raporlara sonradan da erişip yeniden PDF alın. CSV dışa aktarma da var.</p>
+          </article>
+          <article class="lp-feature">
+            <div class="lp-ico"><svg viewBox="0 0 24 24" class="ic"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+            <h3>Ücretsiz & çevrimdışı</h3>
+            <p>Kurulum yok, ücret yok. Veriler yalnızca öğretmenin tarayıcısında saklanır; hiçbir veri sunucuya gönderilmez.</p>
+          </article>
+        </div>
       </div>
-      <div class="table-scroll">
-        <table class="history-table">
-          <thead><tr><th>Tarih</th><th>Öğrenci</th><th>Sınıf</th><th>Konu</th><th>Puan</th><th>Düzey</th><th></th></tr></thead>
-          <tbody id="reportsBody"></tbody>
-        </table>
-      </div>
-      <p id="noReportsHint" class="muted-note" hidden>Henüz kayıtlı rapor yok.</p>
     </section>
 
-    <!-- SINAV MODU -->
-    <section id="view-exam" class="card" hidden>
-      <h2 class="step-title">Sınav Modu</h2>
-
-      <p class="muted-note">Sınıf ve öğrenci seç, öğrencinin konusunu belirle ve değerlendir. Konu öğrenci bazlıdır.</p>
-      <div id="examNoClass" class="notice" hidden>Önce <strong>Sınıflar</strong> sekmesinden bir sınıf ve öğrenci ekleyin.</div>
-
-      <div id="examPicker" class="exam-picker">
-        <label class="field">
-          <span>Sınıf</span>
-          <select id="examClass"></select>
-        </label>
-        <label class="field">
-          <span>Öğrenci</span>
-          <select id="examStudent"></select>
-        </label>
-        <label class="field">
-          <span>Konu <em class="optional">(bu öğrenci için)</em></span>
-          <select id="examTaskSel"></select>
-        </label>
-        <label class="check-field">
-          <input type="checkbox" id="examWhisper" />
-          <span><strong>Daha doğru çözümleme (Whisper · ücretsiz)</strong> — daha isabetli yazıya dökme (Chrome/Edge).</span>
-        </label>
-        <button id="examEvaluateBtn" class="btn btn-primary" type="button">Seçili Öğrenciyi Değerlendir →</button>
-      </div>
-
-      <div id="examRosterWrap">
-        <div class="exam-head">
-          <div>
-            <strong id="examRosterClass"></strong>
-            <p class="muted-note">Sınıf ilerlemesi — satıra tıklayarak öğrenci seçebilirsin</p>
+    <!-- NASIL ÇALIŞIR -->
+    <section id="nasil" class="lp-section lp-alt">
+      <div class="lp-wrap">
+        <h2 class="lp-h2">Üç adımda değerlendirme</h2>
+        <div class="lp-steps">
+          <div class="lp-step">
+            <span class="lp-step-no">1</span>
+            <h3>Öğrenci & görev</h3>
+            <p>Öğrenciyi ve konuşma görevini (8 ünite, 33 konu) seçin.</p>
           </div>
-          <div class="exam-progress">
-            <span id="examProgressText" class="ws-text"></span>
-            <div class="meter"><div id="examProgressBar" class="meter-fill band-3" style="width:0%"></div></div>
+          <div class="lp-step">
+            <span class="lp-step-no">2</span>
+            <h3>Konuş & kaydet</h3>
+            <p>Öğrenci İngilizce konuşur; canlı ses görselleştirici ve kayıt çalışır.</p>
           </div>
-        </div>
-        <div class="table-scroll">
-          <table class="history-table">
-            <thead><tr><th>No</th><th>Öğrenci</th><th>Konu</th><th>Durum</th><th>Puan</th></tr></thead>
-            <tbody id="examStudentList"></tbody>
-          </table>
-        </div>
-        <div class="row-between">
-          <span></span>
-          <button id="examSummaryBtn" class="btn btn-ghost" type="button">Sınıf Özeti &amp; Dışa Aktar →</button>
-        </div>
-      </div>
-
-      <div id="examSummary" hidden>
-        <div class="result-head">
-          <div>
-            <strong id="examSummaryClass"></strong>
-            <p id="examSummaryTask" class="muted-note"></p>
-          </div>
-          <div class="score-ring" id="examAvgRing" style="--p:0">
-            <span id="examAvg">0</span><small>/ 100</small><em>sınıf ort.</em>
-          </div>
-        </div>
-        <div class="table-scroll">
-          <table class="history-table" id="examSummaryTable">
-            <thead><tr><th>No</th><th>Öğrenci</th><th>Konu</th><th>Uyum</th><th>Org.</th><th>Sunum</th><th>Dil</th><th>Yar.</th><th>Toplam</th><th>Düzey</th></tr></thead>
-            <tbody id="examSummaryBody"></tbody>
-          </table>
-        </div>
-        <div class="row-between">
-          <button id="examSummaryBackBtn" class="btn btn-ghost" type="button">← Listeye Dön</button>
-          <div class="result-actions">
-            <button id="examCsvBtn" class="btn btn-ghost" type="button">CSV İndir</button>
-            <button id="examPrintBtn" class="btn btn-ghost" type="button">Yazdır / PDF</button>
+          <div class="lp-step">
+            <span class="lp-step-no">3</span>
+            <h3>Puan & rapor</h3>
+            <p>5 ölçütten puan, güçlü yönler + öneriler ve tek tıkla PDF rapor.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- SINIF YÖNETİMİ -->
-    <section id="view-classes" class="card" hidden>
-      <h2 class="step-title">Sınıf Yönetimi</h2>
-
-      <div class="add-row">
-        <input id="newClassName" type="text" placeholder="Yeni sınıf adı — örn: 9-A" autocomplete="off" />
-        <button id="addClassBtn" class="btn btn-primary" type="button">Sınıf Ekle</button>
+    <!-- KRİTERLER -->
+    <section id="kriterler" class="lp-section">
+      <div class="lp-wrap">
+        <h2 class="lp-h2">Değerlendirme ölçütleri</h2>
+        <p class="lp-sub">Her biri 20 puan — toplam 100.</p>
+        <div class="lp-criteria">
+          <div class="lp-crit"><strong>Uyum</strong><span>Göreve ve konuya uygunluk</span></div>
+          <div class="lp-crit"><strong>Organizasyon</strong><span>Düzen, bağlaçlar, akış</span></div>
+          <div class="lp-crit"><strong>Sunum</strong><span>Akıcılık, telaffuz, anlaşılırlık</span></div>
+          <div class="lp-crit"><strong>Dil</strong><span>Dilbilgisi ve söz dağarcığı</span></div>
+          <div class="lp-crit"><strong>Yaratıcılık</strong><span>Özgünlük, ifade zenginliği</span></div>
+        </div>
       </div>
+    </section>
 
-      <div id="classList" class="class-list"></div>
-      <p id="noClassesHint" class="muted-note" hidden>Henüz sınıf yok. Yukarıdan bir sınıf ekleyin.</p>
-
-      <div id="classDetail" class="class-detail" hidden>
-        <div class="row-between">
-          <h3 id="classDetailName"></h3>
-          <button id="deleteClassBtn" class="btn btn-ghost" type="button">Sınıfı Sil</button>
+    <!-- WHISPER & GEREKSİNİMLER -->
+    <section id="whisper" class="lp-section lp-alt">
+      <div class="lp-wrap">
+        <h2 class="lp-h2">Whisper nedir? Sistem gereksinimleri</h2>
+        <div class="lp-two">
+          <div class="lp-prose">
+            <p><strong>Whisper</strong>, OpenAI'nin geliştirdiği açık kaynaklı bir konuşma tanıma (ASR) modelidir; konuşmayı yazıya döker. Bu uygulamada İngilizceye özel, küçük boyutlu <code>whisper-base.en</code> sürümü kullanılır ve <code>transformers.js</code> ile <strong>tamamen tarayıcının içinde</strong> (WebAssembly/ONNX) çalışır.</p>
+            <p>Yani ses <strong>hiçbir sunucuya gönderilmez</strong>, ücretlidir değildir ve internet yalnızca <strong>ilk indirme</strong> için gerekir; sonrasında çevrimdışı çalışır. Whisper, tarayıcının yerleşik tanımasına göre özellikle aksanlı ya da zayıf İngilizcede çok daha doğru sonuç verir.</p>
+            <p class="lp-muted">Whisper isteğe bağlıdır: kapalıyken uygulama yine de tarayıcının yerleşik konuşma tanıması ve ses analiziyle çalışır (çok daha hafif).</p>
+          </div>
+          <div class="lp-req">
+            <h3>Gereksinimler</h3>
+            <ul>
+              <li><strong>Tarayıcı:</strong> Güncel <strong>Chrome</strong> veya <strong>Edge</strong> (masaüstü önerilir).</li>
+              <li><strong>İnternet:</strong> İlk kullanımda model indirmek için (~bir defalık 40–80 MB); sonrası çevrimdışı.</li>
+              <li><strong>Donanım:</strong> Whisper işlemci/bellek yoğundur. Makul bir bilgisayar (8 GB+ RAM) önerilir; eski/zayıf cihazlarda çözümleme yavaş olabilir.</li>
+            </ul>
+            <p class="lp-mobile"><strong>Mobilde çalışır mı?</strong> Android Chrome'da çalışabilir ama telefonlar daha az güçlü olduğu için yavaştır, mobil veriyi ve belleği zorlar; iOS Safari'de önerilmez. <strong>Öneri:</strong> Whisper'ı masaüstünde kullanın; telefonda kapalı tutup yerleşik tanımayı tercih edin.</p>
+          </div>
         </div>
-        <p id="classStudentCount" class="muted-note"></p>
+      </div>
+    </section>
 
-        <table class="history-table">
-          <thead><tr><th>No</th><th>Öğrenci</th><th></th></tr></thead>
-          <tbody id="studentList"></tbody>
-        </table>
-
-        <div class="add-row">
-          <input id="newStudentNo" type="text" inputmode="numeric" class="no-input" placeholder="No" autocomplete="off" />
-          <input id="newStudentName" type="text" placeholder="Ad Soyad" autocomplete="off" />
-          <button id="addStudentBtn" class="btn btn-ghost" type="button">Ekle</button>
-        </div>
-
-        <label class="field">
-          <span>Toplu öğrenci ekle (her satıra: <strong>No Ad Soyad</strong>)</span>
-          <textarea id="bulkStudents" rows="6" placeholder="101 Ayşe Yılmaz
-102 Mehmet Demir
-103 Zeynep Kaya
-..."></textarea>
-        </label>
-        <button id="bulkAddBtn" class="btn btn-primary" type="button">Listeyi Ekle</button>
+    <!-- CTA -->
+    <section class="lp-cta-band">
+      <div class="lp-wrap">
+        <h2>Sınıfınızda hemen kullanmaya başlayın.</h2>
+        <p>Kurulum gerektirmez. Tarayıcıda açın, mikrofon izni verin, değerlendirin.</p>
+        <a class="lp-btn lp-btn-primary lp-btn-lg" href="app.html">Uygulamayı Aç →</a>
       </div>
     </section>
 
   </main>
 
-  <footer class="app-footer">
-    <p>Bu araç, öğretmenin gözlemini destekleyen otomatik bir ön değerlendirme sunar; nihai not öğretmenin takdirindedir. Veriler yalnızca bu tarayıcıda saklanır.</p>
+  <footer class="lp-footer">
+    <div class="lp-wrap">
+      <p><strong>İngilizce Konuşma Becerisi Değerlendirme</strong> — Türkiye Yüzyılı Maarif Modeli'ne uygun öğretmen aracı.</p>
+      <p class="lp-fine">Bu araç, öğretmenin gözlemini destekleyen otomatik bir ön değerlendirme sunar; nihai değerlendirme öğretmene aittir.</p>
+    </div>
   </footer>
 
-  <!-- Tam ekran yükleniyor katmanı -->
-  <div id="loadingOverlay" class="loading-overlay" hidden>
-    <div class="loading-box">
-      <div id="loadingMain">
-        <div class="spinner" aria-hidden="true"></div>
-        <p id="loadingText">Değerlendiriliyor…</p>
-        <div class="ws-bar" id="loadingBarWrap" hidden><div id="loadingBar" class="ws-bar-fill"></div></div>
-        <small>Lütfen bekleyin, bu işlem birkaç saniye sürebilir.</small>
-      </div>
-      <div id="loadingError" hidden>
-        <div class="load-error-icon" aria-hidden="true">!</div>
-        <p id="loadingErrorText">Bir hata oluştu.</p>
-        <div class="loading-actions">
-          <button id="loadingRetryBtn" class="btn btn-primary" type="button">Tekrar Dene</button>
-          <button id="loadingContinueBtn" class="btn btn-ghost" type="button">Tarayıcı metniyle devam et</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tek sayfalık yazdırma raporu (yalnız yazdırmada görünür) -->
-  <div id="printReport" class="print-report" aria-hidden="true"></div>
-
-  <script src="rubric.js"></script>
-  <script src="audio.js"></script>
-  <script src="app.js"></script>
 </body>
 </html>
