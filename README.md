@@ -32,9 +32,10 @@
   5. **Yaratıcılık** (Creativity) — özgünlük, ifade zenginliği
 - 🏫 **Sınıf yönetimi** — Sınıf oluştur, öğrenci ekle/sil; **toplu öğrenci ekleme**
   (her satıra bir isim yapıştır). Veriler tarayıcıda saklanır.
-- 📝 **Sınav modu** — Bir sınıf + konuşma görevi seç, tüm öğrencileri sırayla aynı görevle
-  değerlendir. İlerleme takibi, sınıf **özet tablosu** (kriter kırılımı + sınıf ortalaması)
-  ve **CSV / yazdırma** ile dışa aktarma.
+- 📝 **Sınav modu** — Bir sınıf seç; **her öğrenciye ayrı konu** atayabilirsin (yoklama
+  listesinde öğrenci başına konu seçici; varsayılan konu da belirlenebilir). İlerleme takibi,
+  sınıf **özet tablosu** (öğrenci + konu + kriter kırılımı + sınıf ortalaması) ve
+  **CSV / yazdırma** ile dışa aktarma.
 - ✍️ **Öğretmen denetimi** — Otomatik puanlar bir ön öneridir; öğretmen her ölçütü
   elle düzeltebilir, toplam ve düzey anında güncellenir.
 - 📚 **Hazır konuşma görevleri** — 9. sınıf "Waymark" ders kitabının 8 temasıyla

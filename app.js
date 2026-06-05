@@ -1029,6 +1029,16 @@
   /* ============================================================ */
   /* SINAV MODU                                                  */
   /* ============================================================ */
+  // Temaya göre gruplu görev <option> listesi (seçili olanı işaretler)
+  function taskOptionsHtml(selectedId) {
+    const order = []; const byTheme = new Map();
+    TASKS.forEach((t) => { if (!byTheme.has(t.theme)) { byTheme.set(t.theme, []); order.push(t.theme); } byTheme.get(t.theme).push(t); });
+    return order.map((th) =>
+      `<optgroup label="${escapeHtml(th)}">` +
+      byTheme.get(th).map((t) => `<option value="${t.id}"${t.id === selectedId ? " selected" : ""}>${escapeHtml(t.title)}</option>`).join("") +
+      `</optgroup>`).join("");
+  }
+
   function renderExamView() {
     if (state.exam) {
       $("examSetup").hidden = true;
@@ -1049,19 +1059,17 @@
     $("startExamBtn").disabled = !hasStudents;
     $("examClass").innerHTML = state.classes.map((c) =>
       `<option value="${c.id}">${escapeHtml(c.name)} (${c.students.length})</option>`).join("");
-    const order = []; const byTheme = new Map();
-    TASKS.forEach((t) => { if (!byTheme.has(t.theme)) { byTheme.set(t.theme, []); order.push(t.theme); } byTheme.get(t.theme).push(t); });
-    $("examTask").innerHTML = order.map((th) =>
-      `<optgroup label="${escapeHtml(th)}">` +
-      byTheme.get(th).map((t) => `<option value="${t.id}">${escapeHtml(t.title)}</option>`).join("") +
-      `</optgroup>`).join("");
+    $("examTask").innerHTML = taskOptionsHtml(TASKS[0].id);
   }
 
   function startExam() {
     const cls = state.classes.find((c) => c.id === $("examClass").value);
     if (!cls || !cls.students.length) { toast("Seçili sınıfta öğrenci yok."); return; }
-    const task = TASKS.find((t) => t.id === $("examTask").value) || TASKS[0];
-    state.exam = { classId: cls.id, className: cls.name, task: task, whisper: $("examWhisper").checked, results: {} };
+    const defaultTaskId = $("examTask").value || TASKS[0].id;
+    // Her öğrenciye varsayılan konuyu ata (listede tek tek değiştirilebilir)
+    const tasks = {};
+    cls.students.forEach((s) => { tasks[s.id] = defaultTaskId; });
+    state.exam = { classId: cls.id, className: cls.name, defaultTaskId: defaultTaskId, tasks: tasks, whisper: $("examWhisper").checked, results: {} };
     renderExamView();
   }
 
@@ -1069,7 +1077,7 @@
     const cls = state.classes.find((c) => c.id === state.exam.classId);
     if (!cls) { state.exam = null; renderExamView(); return; }
     $("examRosterClass").textContent = cls.name;
-    $("examRosterTask").textContent = `${state.exam.task.title} — ${state.exam.task.theme}`;
+    $("examRosterTask").textContent = "Her öğrenci için konuyu seçip değerlendirin.";
     const done = Object.keys(state.exam.results).length, total = cls.students.length;
     $("examProgressText").textContent = `${done}/${total} değerlendirildi`;
     $("examProgressBar").style.width = (total ? done / total * 100 : 0) + "%";
@@ -1078,9 +1086,12 @@
       const status = rec
         ? `<span class="status-chip status-done">Tamamlandı</span>`
         : `<span class="status-chip status-pending">Bekliyor</span>`;
+      const sel = `<select class="exam-task-select" data-id="${s.id}">${taskOptionsHtml(state.exam.tasks[s.id] || state.exam.defaultTaskId)}</select>`;
       const btn = `<button class="btn btn-ghost btn-sm" data-id="${s.id}">${rec ? "Tekrar" : "Değerlendir"}</button>`;
-      return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td><td>${status}</td><td>${rec ? "<strong>" + rec.total + "</strong>" : "—"}</td><td style="text-align:right">${btn}</td></tr>`;
+      return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td><td>${sel}</td><td>${status}</td><td>${rec ? "<strong>" + rec.total + "</strong>" : "—"}</td><td style="text-align:right">${btn}</td></tr>`;
     }).join("");
+    $("examStudentList").querySelectorAll("select[data-id]").forEach((sel) =>
+      sel.addEventListener("change", () => { state.exam.tasks[sel.dataset.id] = sel.value; }));
     $("examStudentList").querySelectorAll("button[data-id]").forEach((b) =>
       b.addEventListener("click", () => evaluateExamStudent(b.dataset.id)));
   }
@@ -1091,7 +1102,8 @@
     if (!student) return;
     state.mode = "exam";
     state.examStudentId = studentId;
-    state.task = state.exam.task;
+    const taskId = state.exam.tasks[studentId] || state.exam.defaultTaskId;
+    state.task = TASKS.find((t) => t.id === taskId) || TASKS[0];
     state.useWhisper = !!state.exam.whisper;
     $("studentName").value = student.name;
     $("studentClass").value = cls.name;
@@ -1101,13 +1113,14 @@
   function renderExamSummary() {
     const cls = state.classes.find((c) => c.id === state.exam.classId);
     $("examSummaryClass").textContent = cls.name;
-    $("examSummaryTask").textContent = `${state.exam.task.title} — ${state.exam.task.theme}`;
+    $("examSummaryTask").textContent = "Öğrenci bazlı konular — sınıf özeti";
     let sum = 0, n = 0;
     $("examSummaryBody").innerHTML = cls.students.map((s, i) => {
       const rec = state.exam.results[s.id];
       const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : "—"; };
+      const task = rec ? rec.task : TASKS.find((t) => t.id === (state.exam.tasks[s.id] || state.exam.defaultTaskId));
       if (rec) { sum += rec.total; n++; }
-      return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td>
+      return `<tr><td>${escapeHtml(studentNo(s, i))}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(task ? task.title : "—")}</td>
         <td>${cell("uyum")}</td><td>${cell("organizasyon")}</td><td>${cell("sunum")}</td><td>${cell("dil")}</td><td>${cell("yaraticilik")}</td>
         <td><strong>${rec ? rec.total : "—"}</strong></td><td>${rec ? escapeHtml(rec.level) : "—"}</td></tr>`;
     }).join("");
@@ -1119,17 +1132,18 @@
   function exportExamCsv() {
     const cls = state.classes.find((c) => c.id === state.exam.classId);
     const csv = (s) => { s = String(s == null ? "" : s); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-    const lines = [["No", "Ogrenci", "Uyum", "Organizasyon", "Sunum", "Dil", "Yaraticilik", "Toplam", "Duzey"].join(";")];
+    const lines = [["No", "Ogrenci", "Konu", "Uyum", "Organizasyon", "Sunum", "Dil", "Yaraticilik", "Toplam", "Duzey"].join(";")];
     cls.students.forEach((s, i) => {
       const rec = state.exam.results[s.id];
       const cell = (id) => { const c = rec && rec.criteria.find((x) => x.id === id); return c ? c.raw : ""; };
-      lines.push([csv(studentNo(s, i)), csv(s.name), cell("uyum"), cell("organizasyon"), cell("sunum"), cell("dil"), cell("yaraticilik"), rec ? rec.total : "", rec ? csv(rec.level) : ""].join(";"));
+      const task = rec ? rec.task : TASKS.find((t) => t.id === (state.exam.tasks[s.id] || state.exam.defaultTaskId));
+      lines.push([csv(studentNo(s, i)), csv(s.name), csv(task ? task.title : ""), cell("uyum"), cell("organizasyon"), cell("sunum"), cell("dil"), cell("yaraticilik"), rec ? rec.total : "", rec ? csv(rec.level) : ""].join(";"));
     });
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `sinav_${csv(cls.name).replace(/\s+/g, "_")}_${state.exam.task.id}.csv`;
+    a.download = `sinav_${String(cls.name).replace(/\s+/g, "_")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

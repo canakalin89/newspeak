@@ -193,7 +193,7 @@
           <select id="examClass"></select>
         </label>
         <label class="field">
-          <span>Konuşma Görevi</span>
+          <span>Varsayılan konu <em class="optional">(her öğrenci için listede ayrıca değiştirilebilir)</em></span>
           <select id="examTask"></select>
         </label>
         <label class="check-field">
@@ -214,10 +214,12 @@
             <div class="meter"><div id="examProgressBar" class="meter-fill band-3" style="width:0%"></div></div>
           </div>
         </div>
-        <table class="history-table">
-          <thead><tr><th>No</th><th>Öğrenci</th><th>Durum</th><th>Puan</th><th></th></tr></thead>
-          <tbody id="examStudentList"></tbody>
-        </table>
+        <div class="table-scroll">
+          <table class="history-table">
+            <thead><tr><th>No</th><th>Öğrenci</th><th>Konu</th><th>Durum</th><th>Puan</th><th></th></tr></thead>
+            <tbody id="examStudentList"></tbody>
+          </table>
+        </div>
         <div class="row-between">
           <button id="examBackBtn" class="btn btn-ghost" type="button">← Sınav Ayarı</button>
           <button id="examSummaryBtn" class="btn btn-primary" type="button">Özet & Dışa Aktar →</button>
@@ -236,7 +238,7 @@
         </div>
         <div class="table-scroll">
           <table class="history-table" id="examSummaryTable">
-            <thead><tr><th>No</th><th>Öğrenci</th><th>Uyum</th><th>Org.</th><th>Sunum</th><th>Dil</th><th>Yar.</th><th>Toplam</th><th>Düzey</th></tr></thead>
+            <thead><tr><th>No</th><th>Öğrenci</th><th>Konu</th><th>Uyum</th><th>Org.</th><th>Sunum</th><th>Dil</th><th>Yar.</th><th>Toplam</th><th>Düzey</th></tr></thead>
             <tbody id="examSummaryBody"></tbody>
           </table>
         </div>

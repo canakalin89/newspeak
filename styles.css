@@ -109,6 +109,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 .status-chip { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: .72rem; font-weight: 600; }
 .status-done { background: var(--accent-soft); color: var(--accent-ink); }
 .status-pending { background: #f0ece4; color: var(--muted); }
+.exam-task-select { font-size: .82rem; padding: 6px 8px; max-width: 210px; }
 
 /* ---------- Kartlar ve adımlar ---------- */
 .card {
