@@ -29,6 +29,7 @@
       <button type="button" class="tab is-active" data-view="single">Tekli Değerlendirme</button>
       <button type="button" class="tab" data-view="exam">Sınav Modu</button>
       <button type="button" class="tab" data-view="classes">Sınıflar</button>
+      <button type="button" class="tab" data-view="reports">Raporlar</button>
     </nav>
 
     <!-- 1. ADIM: Hazırlık -->
@@ -170,15 +171,20 @@
       </div>
     </section>
 
-    <!-- Kayıtlı Değerlendirmeler -->
-    <section id="historySection" class="card" hidden>
-      <h2 class="step-title">Bu Oturumdaki Değerlendirmeler</h2>
-      <table class="history-table">
-        <thead>
-          <tr><th>Öğrenci</th><th>Sınıf</th><th>Görev</th><th>Puan</th><th>Düzey</th><th>Tarih</th></tr>
-        </thead>
-        <tbody id="historyBody"></tbody>
-      </table>
+    <!-- RAPORLAR (kalıcı arşiv) -->
+    <section id="view-reports" class="card" hidden>
+      <h2 class="step-title">Raporlar</h2>
+      <p class="muted-note">Tüm kayıtlı değerlendirmeler burada saklanır; istediğin zaman <strong>PDF</strong> olarak yeniden alabilirsin.</p>
+      <div class="add-row">
+        <input id="reportSearch" type="text" placeholder="Öğrenci veya sınıf ara…" autocomplete="off" />
+      </div>
+      <div class="table-scroll">
+        <table class="history-table">
+          <thead><tr><th>Tarih</th><th>Öğrenci</th><th>Sınıf</th><th>Konu</th><th>Puan</th><th>Düzey</th><th></th></tr></thead>
+          <tbody id="reportsBody"></tbody>
+        </table>
+      </div>
+      <p id="noReportsHint" class="muted-note" hidden>Henüz kayıtlı rapor yok.</p>
     </section>
 
     <!-- SINAV MODU -->

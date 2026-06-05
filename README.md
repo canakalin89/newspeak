@@ -23,13 +23,15 @@
   yazıya dökülür — aksanlı/zayıf İngilizcede bile. Hesap/ücret yok; model **yalnızca bir kez**
   indirilir (tarayıcı önbelleğinde saklanır), sonraki açılışlarda önbellekten yüklenir ve
   çevrimdışı çalışır. Ağ/destek yoksa otomatik olarak Web Speech metnine düşer.
-- 📊 **5 ölçütlü değerlendirme** — Her ölçüt %20 ağırlıklıdır (toplam 100); 0–100 ham
-  puan ve 1–4 başarım düzeyi olarak gösterilir:
+- 📊 **5 ölçütlü değerlendirme** — Her ölçüt **0–20 puan** (5 × 20 = **toplam 100**); 1–4
+  başarım düzeyi olarak gösterilir:
   1. **Uyum** (Relevance) — göreve/konuya uygunluk
   2. **Organizasyon** (Organization) — düzen, bağlaçlar, giriş-gelişme-sonuç
   3. **Sunum** (Delivery) — akıcılık, telaffuz, anlaşılırlık (gerçek ses analizinden)
   4. **Dil** (Language Use) — dilbilgisi + söz dağarcığı
   5. **Yaratıcılık** (Creativity) — özgünlük, ifade zenginliği
+- 🗂️ **Raporlar arşivi** — Tüm değerlendirmeler kalıcı olarak saklanır; "Raporlar" sekmesinden
+  öğrenci/sınıf araması yapıp **istediğin zaman tekrar PDF** alabilirsin.
 - 🏫 **Sınıf yönetimi** — Sınıf oluştur, öğrenci ekle/sil; **toplu öğrenci ekleme**
   (her satıra bir isim yapıştır). Veriler tarayıcıda saklanır.
 - 📝 **Sınav modu** — Bir sınıf seç; **her öğrenciye ayrı konu** atayabilirsin (yoklama

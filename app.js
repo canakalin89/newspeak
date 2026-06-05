@@ -597,17 +597,18 @@
     return patterns.reduce((c, p) => c + (p.test(t) ? 1 : 0), 0);
   }
 
-  /* ham puanı (0-100) → düzey bandı (1-4) */
-  function toBand(raw) {
-    if (raw >= 85) return 4;
-    if (raw >= 65) return 3;
-    if (raw >= 45) return 2;
+  /* kriter puanı (0-20) → düzey bandı (1-4) */
+  function toBand(pts) {
+    if (pts >= 17) return 4;
+    if (pts >= 13) return 3;
+    if (pts >= 9) return 2;
     return 1;
   }
 
+  // Her kriter 0-20; toplam = beş kriterin toplamı (0-100)
   function computeTotal(rawByCriterion) {
     let total = 0;
-    CRITERIA.forEach((c) => { total += (rawByCriterion[c.id] || 0) * c.weight; });
+    CRITERIA.forEach((c) => { total += (rawByCriterion[c.id] || 0); });
     return Math.round(total);
   }
 
@@ -631,7 +632,8 @@
     const { raw, metrics } = analyze(text);
     state.scores = {};
     CRITERIA.forEach((c) => {
-      state.scores[c.id] = { raw: raw[c.id], band: toBand(raw[c.id]) };
+      const pts = Math.round(raw[c.id] / 5); // dahili 0-100 ölçeği -> 0-20 puan
+      state.scores[c.id] = { raw: pts, band: toBand(pts) };
     });
     state.metrics = metrics;
     state.transcriptText = text;
@@ -660,10 +662,10 @@
           </div>
           <div class="crit-score">
             <span class="band-pill band-${s.band}">Düzey ${s.band}/4</span>
-            <input type="number" min="0" max="100" value="${s.raw}" class="raw-input" data-crit="${c.id}" aria-label="${c.name} puanı" />
+            <span class="score-edit"><input type="number" min="0" max="20" value="${s.raw}" class="raw-input" data-crit="${c.id}" aria-label="${c.name} puanı" /><em>/20</em></span>
           </div>
         </div>
-        <div class="meter"><div class="meter-fill band-${s.band}" style="width:${s.raw}%"></div></div>
+        <div class="meter"><div class="meter-fill band-${s.band}" style="width:${s.raw * 5}%"></div></div>
         <p class="band-desc">${c.bands[s.band]}</p>
       `;
       list.appendChild(row);
@@ -672,7 +674,7 @@
     // öğretmen elle puan düzeltebilir
     list.querySelectorAll(".raw-input").forEach((inp) => {
       inp.addEventListener("input", () => {
-        let v = clamp(parseInt(inp.value, 10) || 0, 0, 100);
+        let v = clamp(parseInt(inp.value, 10) || 0, 0, 20);
         const cid = inp.dataset.crit;
         state.scores[cid] = { raw: v, band: toBand(v) };
         refreshScoreVisualsFor(cid, inp);
@@ -714,26 +716,31 @@
   }
 
   // Tek sayfalık yazdırma/PDF raporunu oluştur (güncel puan ve notları yansıtır)
-  function buildPrintReport() {
-    const total = state.total != null ? state.total : 0;
+  // Raporu bir kayıt (buildRecord çıktısı) nesnesinden üretir — hem canlı sonuç
+  // hem de sonradan kaydedilmiş raporlar için aynı işlev kullanılır.
+  function buildPrintReport(rec) {
+    const total = rec.total != null ? rec.total : 0;
     const band = totalBand(total);
-    const name = $("studentName").value.trim() || "—";
-    const cls = $("studentClass").value.trim() || "—";
-    const note = $("teacherNote").value.trim();
-    const date = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });
+    const name = rec.student || "—";
+    const cls = rec.class || "—";
+    const note = (rec.teacherNote || "").trim();
+    const task = rec.task || {};
+    const date = new Date(rec.date || Date.now()).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });
 
-    const rows = CRITERIA.map((c) => {
-      const s = state.scores[c.id];
+    const rows = (rec.criteria || []).map((sc) => {
+      const c = CRITERIA.find((x) => x.id === sc.id) || { name: sc.name, en: "", bands: {}, advice: {} };
+      const bandTxt = (c.bands && c.bands[sc.band]) || "";
+      const adviceTxt = (c.advice && c.advice[sc.band]) || "";
       return `
         <tr>
-          <td class="prc-name">${c.name}<small>${c.en}</small></td>
-          <td class="prc-score"><span class="prc-band b${s.band}">${s.raw}</span></td>
-          <td class="prc-level">Düzey ${s.band}/4</td>
-          <td class="prc-advice"><span class="prc-state">${escapeHtml(c.bands[s.band])}</span> ${escapeHtml(c.advice[s.band])}</td>
+          <td class="prc-name">${escapeHtml(c.name)}<small>${escapeHtml(c.en || "")}</small></td>
+          <td class="prc-score"><span class="prc-band b${sc.band}">${sc.raw}</span></td>
+          <td class="prc-level">Düzey ${sc.band}/4</td>
+          <td class="prc-advice"><span class="prc-state">${escapeHtml(bandTxt)}</span> ${escapeHtml(adviceTxt)}</td>
         </tr>`;
     }).join("");
 
-    const ac = state.metrics && state.metrics.acoustic;
+    const ac = rec.metrics && rec.metrics.acoustic;
     const acLine = ac
       ? `Konuşma süresi ${ac.speechSec} sn · doluluk %${Math.round(ac.speechRatio * 100)} · ${ac.pauseCount} duraklama · ${ac.articulationRate} hece/sn · tonlama ${ac.pitchVarSemitones} yarım ton`
       : "";
@@ -747,7 +754,7 @@
           </div>
           <div class="pr-total b${totalToBand(total)}">
             <span class="pr-total-num">${total}</span><span class="pr-total-den">/100</span>
-            <em>${band.label}</em>
+            <em>${escapeHtml(band.label)}</em>
           </div>
         </div>
 
@@ -755,16 +762,16 @@
           <div><span>Öğrenci</span><strong>${escapeHtml(name)}</strong></div>
           <div><span>Sınıf</span><strong>${escapeHtml(cls)}</strong></div>
           <div><span>Tarih</span><strong>${date}</strong></div>
-          <div class="pr-meta-task"><span>Konuşma Görevi</span><strong>${escapeHtml(state.task.title)} — ${escapeHtml(state.task.theme)}</strong></div>
+          <div class="pr-meta-task"><span>Konuşma Görevi</span><strong>${escapeHtml(task.title || "")}${task.theme ? " — " + escapeHtml(task.theme) : ""}</strong></div>
         </div>
 
         <table class="pr-table">
-          <thead><tr><th>Ölçüt</th><th>Puan</th><th>Düzey</th><th>Durum ve yapman gerekenler</th></tr></thead>
+          <thead><tr><th>Ölçüt</th><th>Puan (0-20)</th><th>Düzey</th><th>Durum ve yapman gerekenler</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
 
         <div class="pr-summary">
-          <strong>Genel değerlendirme.</strong> ${escapeHtml($("overallFeedback").textContent || band.hint)}
+          <strong>Genel değerlendirme.</strong> ${escapeHtml(rec.feedback || band.hint)}
           ${acLine ? `<div class="pr-acoustic">Ses ölçümleri: ${acLine}</div>` : ""}
         </div>
 
@@ -776,6 +783,9 @@
         </div>
       </div>`;
   }
+
+  // Verilen kayıttan PDF/yazdırma raporu üret
+  function printReportFor(rec) { buildPrintReport(rec); window.print(); }
 
   function totalToBand(score) {
     if (score >= 85) return 4;
@@ -802,7 +812,7 @@
     pill.textContent = `Düzey ${s.band}/4`;
     const fill = row.querySelector(".meter-fill");
     fill.className = `meter-fill band-${s.band}`;
-    fill.style.width = s.raw + "%";
+    fill.style.width = (s.raw * 5) + "%";
     const cdef = CRITERIA.find((c) => c.id === cid);
     row.querySelector(".band-desc").textContent = cdef.bands[s.band];
   }
@@ -835,8 +845,8 @@
     }
 
     parts.push(`Genel düzey: ${band.label}. ${band.hint}`);
-    if (strongest.raw >= 60) parts.push(`Güçlü yön: ${strongest.c.name.toLowerCase()}.`);
-    if (weakest.raw < 70) {
+    if (strongest.raw >= 12) parts.push(`Güçlü yön: ${strongest.c.name.toLowerCase()}.`);
+    if (weakest.raw < 14) {
       parts.push(`Geliştirilmesi gereken alan: ${weakest.c.name.toLowerCase()}. ${weakest.c.bands[Math.min(weakest.band + 1, 4)]}`);
     }
     // Çok ses var ama tanınan kelime yok => kötü İngilizce/anlaşılırlık uyarısı
@@ -870,7 +880,8 @@
       })),
       total: state.total,
       level: state.totalBandLabel,
-      teacherNote: $("teacherNote").value.trim()
+      teacherNote: $("teacherNote").value.trim(),
+      feedback: ($("overallFeedback").textContent || "").trim()
     };
   }
 
@@ -878,7 +889,6 @@
     const rec = buildRecord();
     state.history.unshift(rec);
     saveHistory(state.history);
-    renderHistory();
     // Sınav modu: sonucu sınava işle ve listeye dön
     if (state.mode === "exam" && state.exam && state.examStudentId) {
       state.exam.results[state.examStudentId] = rec;
@@ -887,9 +897,8 @@
       showView("exam");
       return;
     }
-    $("historySection").hidden = false;
     $("newAssessmentBtn").hidden = false;
-    toast("Değerlendirme bu oturuma kaydedildi.");
+    toast("Kaydedildi. 'Raporlar' sekmesinden istediğin zaman PDF alabilirsin.");
     resetForNew();
     showView("single");
   }
@@ -913,20 +922,25 @@
   function saveHistory(h) {
     try { localStorage.setItem("tymm_assessments", JSON.stringify(h.slice(0, 200))); } catch (_) {}
   }
-  function renderHistory() {
-    const body = $("historyBody");
-    if (!state.history.length) { $("historySection").hidden = true; return; }
-    $("historySection").hidden = false;
-    $("newAssessmentBtn").hidden = false;
-    body.innerHTML = state.history.map((r) => `
+  // Raporlar sekmesi: tüm kayıtlı değerlendirmeler (kalıcı), sonradan PDF alınabilir
+  function renderReports() {
+    const q = ($("reportSearch") ? $("reportSearch").value.trim().toLowerCase() : "");
+    const items = state.history.filter((r) =>
+      !q || (r.student || "").toLowerCase().includes(q) || (r.class || "").toLowerCase().includes(q));
+    $("noReportsHint").hidden = state.history.length > 0;
+    const body = $("reportsBody");
+    body.innerHTML = items.map((r, idx) => `
       <tr>
+        <td>${new Date(r.date).toLocaleDateString("tr-TR")}</td>
         <td>${escapeHtml(r.student || "—")}</td>
         <td>${escapeHtml(r.class || "—")}</td>
-        <td>${escapeHtml(r.task.title)}</td>
-        <td><strong>${r.total}</strong></td>
-        <td>${escapeHtml(r.level)}</td>
-        <td>${new Date(r.date).toLocaleString("tr-TR")}</td>
-      </tr>`).join("");
+        <td>${escapeHtml(r.task && r.task.title || "—")}</td>
+        <td><strong>${r.total}</strong>/100</td>
+        <td>${escapeHtml(r.level || "—")}</td>
+        <td style="text-align:right"><button class="btn btn-ghost btn-sm" data-idx="${idx}">PDF</button></td>
+      </tr>`).join("") || `<tr><td colspan="7" class="muted-note" style="padding:12px 0">Sonuç yok.</td></tr>`;
+    body.querySelectorAll("button[data-idx]").forEach((b) =>
+      b.addEventListener("click", () => printReportFor(items[parseInt(b.dataset.idx, 10)])));
   }
 
   function resetForNew() {
@@ -1165,7 +1179,7 @@
   // Kayıt/sonuç akışı: sekmeleri ve tüm görünümleri gizle, yalnız akışı göster
   function showFlow(step) {
     $("tabs").hidden = true;
-    ["setupStep", "historySection", "view-exam", "view-classes"].forEach((id) => {
+    ["setupStep", "view-exam", "view-classes", "view-reports"].forEach((id) => {
       const e = $(id); if (e) e.hidden = true;
     });
     steps.record.hidden = step !== "record";
@@ -1173,7 +1187,7 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Üst sekmeler: single / exam / classes
+  // Üst sekmeler: single / exam / classes / reports
   function showView(view) {
     state.view = view;
     $("tabs").hidden = false;
@@ -1182,10 +1196,11 @@
     $("setupStep").hidden = view !== "single";
     $("view-exam").hidden = view !== "exam";
     $("view-classes").hidden = view !== "classes";
-    $("historySection").hidden = !(view === "single" && state.history.length);
+    $("view-reports").hidden = view !== "reports";
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("is-active", t.dataset.view === view));
     if (view === "exam") renderExamView();
     if (view === "classes") renderClasses();
+    if (view === "reports") renderReports();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -1243,7 +1258,8 @@
       btn.disabled = false;
     });
     $("backToRecordBtn").addEventListener("click", () => showFlow("record"));
-    $("printBtn").addEventListener("click", () => { buildPrintReport(); window.print(); });
+    $("printBtn").addEventListener("click", () => printReportFor(buildRecord()));
+    $("reportSearch").addEventListener("input", renderReports);
     $("downloadAudioBtn").addEventListener("click", downloadAudio);
     $("exportBtn").addEventListener("click", exportJson);
     $("finishBtn").addEventListener("click", finishAssessment);
@@ -1276,5 +1292,4 @@
   /* ----------------------------- başlat ----------------------------- */
   initSetup();
   bindEvents();
-  renderHistory();
 })();
