@@ -22,7 +22,9 @@
   tarayıcıda çalışan açık kaynak **Whisper** (`transformers.js`, ONNX-WASM) ile **çok daha doğru**
   yazıya dökülür — aksanlı/zayıf İngilizcede bile. Hesap/ücret yok; model **yalnızca bir kez**
   indirilir (tarayıcı önbelleğinde saklanır), sonraki açılışlarda önbellekten yüklenir ve
-  çevrimdışı çalışır. Ağ/destek yoksa otomatik olarak Web Speech metnine düşer.
+  çevrimdışı çalışır. Ağ/destek yoksa otomatik olarak Web Speech metnine düşer. Whisper bir
+  **Web Worker**'da çalışır; böylece çözümleme sırasında arayüz kilitlenmez ve bir **yükleniyor
+  ekranı** ilerlemeyi gösterir.
 - 📊 **5 ölçütlü değerlendirme** — Her ölçüt **0–20 puan** (5 × 20 = **toplam 100**); 1–4
   başarım düzeyi olarak gösterilir:
   1. **Uyum** (Relevance) — göreve/konuya uygunluk

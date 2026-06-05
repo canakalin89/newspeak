@@ -310,6 +310,16 @@
     <p>Bu araç, öğretmenin gözlemini destekleyen otomatik bir ön değerlendirme sunar; nihai not öğretmenin takdirindedir. Veriler yalnızca bu tarayıcıda saklanır.</p>
   </footer>
 
+  <!-- Tam ekran yükleniyor katmanı -->
+  <div id="loadingOverlay" class="loading-overlay" hidden>
+    <div class="loading-box">
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="loadingText">Değerlendiriliyor…</p>
+      <div class="ws-bar" id="loadingBarWrap" hidden><div id="loadingBar" class="ws-bar-fill"></div></div>
+      <small>Lütfen bekleyin, bu işlem birkaç saniye sürebilir.</small>
+    </div>
+  </div>
+
   <!-- Tek sayfalık yazdırma raporu (yalnız yazdırmada görünür) -->
   <div id="printReport" class="print-report" aria-hidden="true"></div>
 

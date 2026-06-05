@@ -253,6 +253,7 @@
   const WHISPER_MODEL = "Xenova/whisper-base.en"; // İngilizce, dengeli boyut/doğruluk
   const WHISPER_READY_FLAG = "tymm_whisper_ready"; // model daha önce indirildi mi
   let _whisperPipe = null, _whisperLoading = null;
+  let _whisperWorker = null, _whisperJob = null;
   const _wFiles = {}; // dosya bazında indirme ilerlemesi
 
   function whisperWasDownloaded() {
@@ -271,13 +272,94 @@
     if (t && text != null) t.textContent = text;
   }
 
+  // İndirme ilerlemesi (worker ya da ana iş parçacığından) → durum çubuğu + yükleniyor ekranı
+  function onWhisperProgress(p) {
+    if (!p || !p.file) return;
+    if (p.status === "progress" && p.total) {
+      _wFiles[p.file] = { loaded: p.loaded || 0, total: p.total };
+      let L = 0, T = 0;
+      for (const k in _wFiles) { L += _wFiles[k].loaded; T += _wFiles[k].total; }
+      const pct = T ? (L / T) * 100 : 0;
+      if (pct < 100) {
+        setWhisperUI(pct, `indiriliyor… %${Math.round(pct)} (tek seferlik)`);
+        if (_loadingActive) setLoading(`Whisper modeli indiriliyor… %${Math.round(pct)}`, pct);
+      }
+    }
+  }
+
   function preloadWhisper() {
     // Model bir kez indirilir; sonraki açılışlarda tarayıcı önbelleğinden gelir.
     const cached = whisperWasDownloaded();
     setWhisperUI(cached ? 100 : 0, cached ? "önbellekten yükleniyor…" : "ilk kez indiriliyor (tek seferlik)…");
-    getWhisper()
-      .then(() => { try { localStorage.setItem(WHISPER_READY_FLAG, "1"); } catch (_) {} setWhisperUI(100, "hazır ✓", "ready"); })
-      .catch(() => setWhisperUI(100, "indirilemedi — tarayıcı tanıma kullanılacak", "error"));
+    try { getWhisperWorker().postMessage({ kind: "load" }); }
+    catch (_) { /* worker kurulamazsa transcribe sırasında ana iş parçacığına düşülür */ }
+  }
+
+  // Whisper'ı bir Web Worker'da çalıştır → ağır hesaplama arayüzü kilitlemez (donma yok)
+  function getWhisperWorker() {
+    if (_whisperWorker) return _whisperWorker;
+    const cdnList = [
+      "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+      "https://esm.sh/@xenova/transformers@2.17.2",
+      "https://unpkg.com/@xenova/transformers@2.17.2"
+    ];
+    const code = `
+      const CDNS = ${JSON.stringify(cdnList)};
+      const MODEL = ${JSON.stringify(WHISPER_MODEL)};
+      let pipe = null;
+      async function ensure() {
+        if (pipe) return;
+        let mod, err;
+        for (const u of CDNS) { try { mod = await import(u); break; } catch (e) { err = e; } }
+        if (!mod) throw err || new Error("transformers yüklenemedi");
+        mod.env.allowLocalModels = false;
+        mod.env.useBrowserCache = true;
+        pipe = await mod.pipeline("automatic-speech-recognition", MODEL, {
+          quantized: true,
+          progress_callback: (p) => self.postMessage({ kind: "progress", p: p })
+        });
+        self.postMessage({ kind: "ready" });
+      }
+      self.onmessage = async (e) => {
+        const msg = e.data || {};
+        try {
+          await ensure();
+          if (msg.kind === "transcribe") {
+            const out = await pipe(msg.pcm, { chunk_length_s: 30, stride_length_s: 5 });
+            self.postMessage({ kind: "result", text: (out && out.text) || "" });
+          }
+        } catch (err) {
+          self.postMessage({ kind: "error", error: String((err && err.message) || err) });
+        }
+      };
+    `;
+    const url = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
+    const w = new Worker(url, { type: "module" });
+    w.addEventListener("message", (e) => {
+      const d = e.data || {};
+      if (d.kind === "progress") onWhisperProgress(d.p);
+      else if (d.kind === "ready") {
+        try { localStorage.setItem(WHISPER_READY_FLAG, "1"); } catch (_) {}
+        setWhisperUI(100, "hazır ✓", "ready");
+        if (_loadingActive) setLoading("Ses çözümleniyor…");
+      } else if (d.kind === "result") {
+        if (_whisperJob) { _whisperJob.resolve((d.text || "").replace(/\s+/g, " ").trim()); _whisperJob = null; }
+      } else if (d.kind === "error") {
+        if (_whisperJob) { _whisperJob.reject(new Error(d.error)); _whisperJob = null; }
+      }
+    });
+    w.addEventListener("error", () => { if (_whisperJob) { _whisperJob.reject(new Error("worker hatası")); _whisperJob = null; } });
+    _whisperWorker = w;
+    return w;
+  }
+
+  function workerTranscribe(pcm) {
+    const w = getWhisperWorker();
+    return new Promise((resolve, reject) => {
+      _whisperJob = { resolve, reject };
+      const copy = new Float32Array(pcm); // transfer için kopya (orijinal yedekte kalır)
+      w.postMessage({ kind: "transcribe", pcm: copy }, [copy.buffer]);
+    });
   }
 
   // transformers.js'i birden çok CDN'den dene (biri engelliyse diğeri)
@@ -295,28 +377,19 @@
     throw lastErr || new Error("transformers.js yüklenemedi");
   }
 
+  // Ana iş parçacığı yedeği (worker kullanılamazsa)
   function getWhisper() {
     if (_whisperPipe) return Promise.resolve(_whisperPipe);
     if (!_whisperLoading) {
       _whisperLoading = (async () => {
         const mod = await importTransformers();
-        mod.env.allowLocalModels = false;            // modeli Hugging Face CDN'inden al
-        mod.env.useBrowserCache = true;              // bir kez indir, tarayıcı önbelleğinde sakla
+        mod.env.allowLocalModels = false;
+        mod.env.useBrowserCache = true;
         const pipe = await mod.pipeline("automatic-speech-recognition", WHISPER_MODEL, {
-          quantized: true,
-          progress_callback: (p) => {
-            if (!p || !p.file) return;
-            // Yalnızca gerçek ağ indirmesinde yüzde göster (önbellekten gelişte byte akmaz)
-            if (p.status === "progress" && p.total) {
-              _wFiles[p.file] = { loaded: p.loaded || 0, total: p.total };
-              let L = 0, T = 0;
-              for (const k in _wFiles) { L += _wFiles[k].loaded; T += _wFiles[k].total; }
-              const pct = T ? (L / T) * 100 : 0;
-              if (pct < 100) setWhisperUI(pct, `indiriliyor… %${Math.round(pct)} (tek seferlik)`);
-            }
-          }
+          quantized: true, progress_callback: onWhisperProgress
         });
         _whisperPipe = pipe;
+        try { localStorage.setItem(WHISPER_READY_FLAG, "1"); } catch (_) {}
         setWhisperUI(100, "hazır ✓", "ready");
         return pipe;
       })();
@@ -324,13 +397,20 @@
     return _whisperLoading;
   }
 
-  async function transcribeWithWhisper(blob) {
-    $("recStatusText").textContent = "Whisper modeli hazırlanıyor…";
+  async function mainThreadTranscribe(pcm) {
     const pipe = await getWhisper();
-    $("recStatusText").textContent = "Ses çözümleniyor (Whisper)…";
-    const pcm = await blobToMono16k(blob);
     const out = await pipe(pcm, { chunk_length_s: 30, stride_length_s: 5 });
     return (out && out.text ? out.text : "").replace(/\s+/g, " ").trim();
+  }
+
+  async function transcribeWithWhisper(blob) {
+    const pcm = await blobToMono16k(blob);            // ses çözme (hızlı, async)
+    try {
+      return await workerTranscribe(pcm);             // worker → arayüz kilitlenmez
+    } catch (e) {
+      try { return await mainThreadTranscribe(pcm); } // yedek
+      catch (_) { throw e; }
+    }
   }
 
   // Ses kaydını (webm/opus) 16 kHz mono Float32'ye çöz — Whisper bunu bekler
@@ -1236,6 +1316,28 @@
     el._t = setTimeout(() => el.classList.remove("show"), 2600);
   }
 
+  /* Tam ekran yükleniyor katmanı (uzun işlemler için) */
+  let _loadingActive = false;
+  function showLoading(text) {
+    _loadingActive = true;
+    const o = $("loadingOverlay");
+    if (!o) return;
+    o.hidden = false;
+    $("loadingText").textContent = text || "Lütfen bekleyin…";
+    $("loadingBarWrap").hidden = true;
+    $("loadingBar").style.width = "0%";
+  }
+  function setLoading(text, pct) {
+    if (!_loadingActive) return;
+    if (text != null) $("loadingText").textContent = text;
+    if (pct != null) { $("loadingBarWrap").hidden = false; $("loadingBar").style.width = clamp(pct, 0, 100) + "%"; }
+  }
+  function hideLoading() {
+    _loadingActive = false;
+    const o = $("loadingOverlay");
+    if (o) o.hidden = true;
+  }
+
   /* matematiksel/biçim yardımcıları */
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   function map(v, inLo, inHi, outLo, outHi) {
@@ -1266,19 +1368,26 @@
     $("evaluateBtn").addEventListener("click", async () => {
       const btn = $("evaluateBtn");
       btn.disabled = true;
-      await stopRecording();           // ses analizinin bitmesini bekle
-      // İsteğe bağlı: Whisper ile daha doğru yazıya dökme (ücretsiz, tarayıcıda)
-      if (state.useWhisper && state.audioBlob) {
-        try {
-          const txt = await transcribeWithWhisper(state.audioBlob);
-          if (txt) { $("transcript").value = txt; $("transcript").classList.remove("invalid"); }
-        } catch (e) {
-          toast("Whisper çözümlemesi yapılamadı; tarayıcı metni kullanılıyor.");
+      showLoading("Ses çözümleniyor…");
+      try {
+        await stopRecording();         // ses analizinin bitmesini bekle
+        // İsteğe bağlı: Whisper ile daha doğru yazıya dökme (worker'da; arayüz kilitlenmez)
+        if (state.useWhisper && state.audioBlob) {
+          setLoading(whisperWasDownloaded() ? "Ses çözümleniyor (Whisper)…" : "Whisper modeli hazırlanıyor…");
+          try {
+            const txt = await transcribeWithWhisper(state.audioBlob);
+            if (txt) { $("transcript").value = txt; $("transcript").classList.remove("invalid"); }
+          } catch (e) {
+            toast("Whisper çözümlemesi yapılamadı; tarayıcı metni kullanılıyor.");
+          }
+          $("recStatusText").textContent = `Tamamlandı · ${formatTime(state.elapsedMs)}`;
         }
-        $("recStatusText").textContent = `Tamamlandı · ${formatTime(state.elapsedMs)}`;
+        setLoading("Puanlanıyor…");
+        runEvaluation();
+      } finally {
+        hideLoading();
+        btn.disabled = false;
       }
-      runEvaluation();
-      btn.disabled = false;
     });
     $("backToRecordBtn").addEventListener("click", () => showFlow("record"));
     $("printBtn").addEventListener("click", () => printReportFor(buildRecord()));
