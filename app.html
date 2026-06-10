@@ -188,6 +188,9 @@
       <p class="muted-note">Tüm kayıtlı değerlendirmeler burada saklanır; istediğin zaman <strong>PDF</strong> olarak yeniden alabilirsin.</p>
       <div class="add-row">
         <input id="reportSearch" type="text" placeholder="Öğrenci veya sınıf ara…" autocomplete="off" />
+        <button id="backupBtn" class="btn btn-ghost" type="button">Yedek İndir</button>
+        <button id="restoreBtn" class="btn btn-ghost" type="button">Yedekten Yükle</button>
+        <input id="restoreFile" type="file" accept=".json,application/json" hidden />
       </div>
       <div class="table-scroll">
         <table class="history-table">
@@ -196,6 +199,16 @@
         </table>
       </div>
       <p id="noReportsHint" class="muted-note" hidden>Henüz kayıtlı rapor yok.</p>
+
+      <!-- Öğrenci gelişim paneli -->
+      <div id="progressPanel" class="progress-panel" hidden>
+        <div class="row-between">
+          <h3 id="progressTitle"></h3>
+          <button id="progressCloseBtn" class="btn btn-ghost btn-sm" type="button">Kapat</button>
+        </div>
+        <div id="progressTimeline" class="progress-timeline"></div>
+        <div id="progressCriteria" class="progress-criteria"></div>
+      </div>
     </section>
 
     <!-- SINAV MODU -->

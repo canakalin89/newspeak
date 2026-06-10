@@ -1126,10 +1126,120 @@
         <td>${escapeHtml(r.task && r.task.title || "—")}</td>
         <td><strong>${r.total}</strong>/100</td>
         <td>${escapeHtml(r.level || "—")}</td>
-        <td style="text-align:right"><button class="btn btn-ghost btn-sm" data-idx="${idx}">PDF</button></td>
+        <td style="text-align:right; white-space:nowrap">
+          <button class="btn btn-ghost btn-sm" data-prog="${idx}">Gelişim</button>
+          <button class="btn btn-ghost btn-sm" data-idx="${idx}">PDF</button>
+        </td>
       </tr>`).join("") || `<tr><td colspan="7" class="muted-note" style="padding:12px 0">Sonuç yok.</td></tr>`;
     body.querySelectorAll("button[data-idx]").forEach((b) =>
       b.addEventListener("click", () => printReportFor(items[parseInt(b.dataset.idx, 10)])));
+    body.querySelectorAll("button[data-prog]").forEach((b) =>
+      b.addEventListener("click", () => showProgress(items[parseInt(b.dataset.prog, 10)])));
+  }
+
+  /* ============================================================ */
+  /* ÖĞRENCİ GELİŞİM TAKİBİ                                       */
+  /* ============================================================ */
+  function studentKey(r) {
+    return ((r.student || "").trim().toLowerCase() + "|" + (r.class || "").trim().toLowerCase());
+  }
+
+  // Aynı öğrencinin (ad + sınıf) tüm değerlendirmelerini tarihe göre göster
+  function showProgress(rec) {
+    const key = studentKey(rec);
+    const recs = state.history.filter((r) => studentKey(r) === key)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    $("progressTitle").textContent = `${rec.student || "—"} · ${rec.class || "—"} — Gelişim`;
+    const panel = $("progressPanel");
+    panel.hidden = false;
+
+    if (recs.length < 2) {
+      $("progressTimeline").innerHTML = `<p class="muted-note">Gelişim grafiği için en az iki değerlendirme gerekli. Şu an ${recs.length} kayıt var.</p>`;
+      $("progressCriteria").innerHTML = "";
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
+
+    // Zaman çizelgesi: tarih · konu · toplam (mini bar)
+    $("progressTimeline").innerHTML = recs.map((r) => `
+      <div class="pt-row">
+        <span class="pt-date">${new Date(r.date).toLocaleDateString("tr-TR")}</span>
+        <span class="pt-task">${escapeHtml(r.task && r.task.title || "—")}</span>
+        <i class="pt-bar"><b style="width:${clamp(r.total, 0, 100)}%"></b></i>
+        <strong class="pt-score">${r.total}</strong>
+      </div>`).join("");
+
+    // Kriter bazında ilk → son karşılaştırma
+    const first = recs[0], last = recs[recs.length - 1];
+    const critRow = (c) => {
+      const f = (first.criteria || []).find((x) => x.id === c.id);
+      const l = (last.criteria || []).find((x) => x.id === c.id);
+      if (!f || !l) return "";
+      const d = l.raw - f.raw;
+      const cls = d > 0 ? "up" : d < 0 ? "down" : "same";
+      const sym = d > 0 ? "▲" : d < 0 ? "▼" : "•";
+      return `<div class="pc-row"><span>${escapeHtml(c.name)}</span><em>${f.raw} → ${l.raw}</em><b class="pc-delta ${cls}">${sym} ${d > 0 ? "+" : ""}${d}</b></div>`;
+    };
+    const totalD = last.total - first.total;
+    $("progressCriteria").innerHTML =
+      `<h4>İlk değerlendirmeden bu yana (${recs.length} kayıt)</h4>` +
+      CRITERIA.map(critRow).join("") +
+      `<div class="pc-row pc-total"><span>Toplam</span><em>${first.total} → ${last.total}</em><b class="pc-delta ${totalD > 0 ? "up" : totalD < 0 ? "down" : "same"}">${totalD > 0 ? "▲ +" : totalD < 0 ? "▼ " : "• "}${totalD}</b></div>`;
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /* ============================================================ */
+  /* YEDEKLE / İÇE AKTAR                                          */
+  /* ============================================================ */
+  function exportBackup() {
+    const data = {
+      app: "tymm-konusma-degerlendirme",
+      version: 1,
+      date: new Date().toISOString(),
+      classes: state.classes,
+      assessments: state.history,
+      exam: { examClassId: state.examClassId, examStudentId: state.examStudentId, examResults: state.examResults }
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `yedek_konusma_degerlendirme_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Yedek dosyası indirildi.");
+  }
+
+  function importBackup(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try { data = JSON.parse(reader.result); } catch (_) { toast("Dosya okunamadı: geçerli bir JSON değil."); return; }
+      if (!data || !Array.isArray(data.classes) || !Array.isArray(data.assessments)) {
+        toast("Bu dosya geçerli bir yedek değil.");
+        return;
+      }
+      const ok = confirm(
+        `Yedek: ${data.classes.length} sınıf, ${data.assessments.length} değerlendirme` +
+        (data.date ? ` (${new Date(data.date).toLocaleDateString("tr-TR")})` : "") +
+        `\n\nMevcut tüm veriler bu yedekle DEĞİŞTİRİLECEK. Devam edilsin mi?`
+      );
+      if (!ok) return;
+      state.classes = data.classes;
+      state.history = data.assessments;
+      saveClasses();
+      saveHistory(state.history);
+      if (data.exam) {
+        state.examClassId = data.exam.examClassId || null;
+        state.examStudentId = data.exam.examStudentId || null;
+        state.examResults = data.exam.examResults || {};
+        saveExam();
+      }
+      $("progressPanel").hidden = true;
+      renderReports();
+      toast("Yedek geri yüklendi.");
+    };
+    reader.readAsText(file);
   }
 
   function resetForNew() {
@@ -1564,6 +1674,13 @@
     $("backToRecordBtn").addEventListener("click", () => showFlow("record"));
     $("printBtn").addEventListener("click", () => printReportFor(buildRecord()));
     $("reportSearch").addEventListener("input", renderReports);
+    $("backupBtn").addEventListener("click", exportBackup);
+    $("restoreBtn").addEventListener("click", () => $("restoreFile").click());
+    $("restoreFile").addEventListener("change", (e) => {
+      if (e.target.files && e.target.files[0]) importBackup(e.target.files[0]);
+      e.target.value = ""; // aynı dosya tekrar seçilebilsin
+    });
+    $("progressCloseBtn").addEventListener("click", () => { $("progressPanel").hidden = true; });
     $("downloadAudioBtn").addEventListener("click", downloadAudio);
     $("exportBtn").addEventListener("click", exportJson);
     $("finishBtn").addEventListener("click", finishAssessment);

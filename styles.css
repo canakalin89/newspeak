@@ -334,6 +334,31 @@ textarea { resize: vertical; }
 .app-footer { max-width: 820px; margin: 0 auto 36px; padding: 0 20px; }
 .app-footer p { font-size: .77rem; color: var(--faint); text-align: center; border-top: 1px solid var(--line); padding-top: 18px; }
 
+/* Öğrenci gelişim paneli */
+.progress-panel { margin-top: 20px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; padding: 18px; background: #fcfbf9; }
+.progress-panel h3 { margin: 0; font-size: 1.05rem; }
+.progress-timeline { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.pt-row { display: grid; grid-template-columns: 84px minmax(90px, 1fr) minmax(80px, 2fr) 34px; align-items: center; gap: 10px; font-size: .84rem; }
+.pt-date { color: var(--muted); font-variant-numeric: tabular-nums; }
+.pt-task { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-bar { display: block; height: 9px; background: #ece7dd; border-radius: 99px; overflow: hidden; }
+.pt-bar b { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.pt-score { text-align: right; font-variant-numeric: tabular-nums; }
+.progress-criteria { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.progress-criteria h4 { margin: 0 0 10px; font-size: .8rem; font-family: var(--sans); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.pc-row { display: grid; grid-template-columns: 1fr 86px 70px; gap: 10px; align-items: center; font-size: .86rem; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+.pc-row:last-child { border-bottom: none; }
+.pc-row em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.pc-delta { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.pc-delta.up { color: var(--b3); }
+.pc-delta.down { color: var(--b1); }
+.pc-delta.same { color: var(--faint); }
+.pc-total { font-weight: 700; border-top: 1px solid var(--line); margin-top: 4px; padding-top: 8px; }
+@media (max-width: 560px) {
+  .pt-row { grid-template-columns: 74px 1fr 34px; }
+  .pt-bar { display: none; }
+}
+
 /* Tam ekran yükleniyor katmanı */
 .loading-overlay {
   position: fixed; inset: 0; z-index: 100;
