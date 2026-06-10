@@ -1717,4 +1717,9 @@
   initSetup();
   bindEvents();
   loadExam(); // yarım kalan sınav ilerlemesini geri yükle
+
+  // PWA: uygulama kabuğunu çevrimdışı kullanım için kaydet
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* http/eski tarayıcı: sessizce geç */ });
+  }
 })();

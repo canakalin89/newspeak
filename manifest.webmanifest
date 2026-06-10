@@ -1,0 +1,15 @@
+{
+  "name": "İngilizce Konuşma Becerisi Değerlendirme",
+  "short_name": "Konuşma Değ.",
+  "description": "Türkiye Yüzyılı Maarif Modeli'ne uygun, 9. sınıf İngilizce konuşma becerisi değerlendirme aracı. Gerçek ses analizi, sınıf yönetimi, sınav modu ve PDF rapor.",
+  "lang": "tr",
+  "start_url": "app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3ee",
+  "theme_color": "#1f5132",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

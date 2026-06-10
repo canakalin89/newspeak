@@ -37,6 +37,13 @@
   tavsiyelerle gösterilir.
 - 🗂️ **Raporlar arşivi** — Tüm değerlendirmeler kalıcı olarak saklanır; "Raporlar" sekmesinden
   öğrenci/sınıf araması yapıp **istediğin zaman tekrar PDF** alabilirsin.
+- 📈 **Öğrenci gelişim takibi** — Raporlarda "Gelişim" ile aynı öğrencinin zaman içindeki
+  puanları (mini grafik) ve kriter bazında ilk→son karşılaştırması görülür.
+- 💾 **Yedekle / İçe aktar** — Tüm sınıflar, raporlar ve sınav ilerlemesi tek JSON dosyayla
+  yedeklenir ve başka cihazda geri yüklenir.
+- 📱 **PWA (kurulabilir uygulama)** — Tarayıcıdan "Yükle" ile telefona/PC'ye uygulama gibi
+  kurulur; ikinci açılıştan itibaren tamamen çevrimdışı çalışır. Sınav ilerlemesi de sayfa
+  yenilense bile kaybolmaz.
 - 🏫 **Sınıf yönetimi** — Sınıf oluştur, öğrenci ekle/sil; **toplu öğrenci ekleme**
   (her satıra bir isim yapıştır). Veriler tarayıcıda saklanır.
 - 📝 **Sınav modu** — **Sınıf + öğrenci + konu** seç ve değerlendir. Konu **öğrenci bazlıdır**
