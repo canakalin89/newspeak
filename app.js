@@ -1259,6 +1259,40 @@
     if (!state.examResults[state.examClassId]) state.examResults[state.examClassId] = {};
     return state.examResults[state.examClassId];
   }
+
+  /* Sınav ilerlemesi kalıcıdır: sayfa yenilense bile kaldığı yerden devam eder */
+  function saveExam() {
+    try {
+      localStorage.setItem("tymm_exam", JSON.stringify({
+        examClassId: state.examClassId,
+        examStudentId: state.examStudentId,
+        examResults: state.examResults
+      }));
+    } catch (_) {}
+  }
+  function loadExam() {
+    try {
+      const d = JSON.parse(localStorage.getItem("tymm_exam") || "null");
+      if (!d) return;
+      // Silinmiş sınıflara ait sonuçları ayıkla
+      const valid = new Set(state.classes.map((c) => c.id));
+      state.examResults = {};
+      Object.keys(d.examResults || {}).forEach((cid) => { if (valid.has(cid)) state.examResults[cid] = d.examResults[cid]; });
+      if (valid.has(d.examClassId)) {
+        state.examClassId = d.examClassId;
+        state.examStudentId = d.examStudentId;
+      }
+    } catch (_) {}
+  }
+  function resetExamForClass() {
+    const cls = examClass(); if (!cls) return;
+    if (!confirm(`"${cls.name}" sınavındaki tüm sonuçlar sıfırlansın mı? (Raporlar arşivi silinmez)`)) return;
+    delete state.examResults[cls.id];
+    saveExam();
+    renderExamView();
+    toast("Sınav ilerlemesi sıfırlandı.");
+  }
+
   function currentExamStudent() {
     const cls = examClass();
     return cls ? (cls.students.find((s) => s.id === state.examStudentId) || null) : null;
@@ -1341,6 +1375,7 @@
       const next = cls.students.find((s) => !results[s.id]);
       if (next) state.examStudentId = next.id;
     }
+    saveExam();
   }
 
   function renderExamSummary() {
@@ -1550,8 +1585,9 @@
     $("bulkAddBtn").addEventListener("click", bulkAddStudents);
 
     // Sınav modu
-    $("examClass").addEventListener("change", () => { state.examClassId = $("examClass").value; state.examStudentId = null; populateExamStudents(); renderExamRoster(); });
-    $("examStudent").addEventListener("change", () => { state.examStudentId = $("examStudent").value; syncExamTopic(); renderExamRoster(); });
+    $("examClass").addEventListener("change", () => { state.examClassId = $("examClass").value; state.examStudentId = null; populateExamStudents(); renderExamRoster(); saveExam(); });
+    $("examStudent").addEventListener("change", () => { state.examStudentId = $("examStudent").value; syncExamTopic(); renderExamRoster(); saveExam(); });
+    $("examResetBtn").addEventListener("click", resetExamForClass);
     $("examTaskSel").addEventListener("change", () => { const s = currentExamStudent(); if (s) { s.taskId = $("examTaskSel").value; saveClasses(); renderExamRoster(); } });
     $("examEvaluateBtn").addEventListener("click", examEvaluate);
     $("examSummaryBtn").addEventListener("click", () => { renderExamSummary(); $("examPicker").hidden = true; $("examRosterWrap").hidden = true; $("examSummary").hidden = false; });
@@ -1563,4 +1599,5 @@
   /* ----------------------------- başlat ----------------------------- */
   initSetup();
   bindEvents();
+  loadExam(); // yarım kalan sınav ilerlemesini geri yükle
 })();
